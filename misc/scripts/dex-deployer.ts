@@ -11,6 +11,7 @@ import fs from "fs";
 import commandLineArgs from "command-line-args";
 import { exit } from "process";
 import {
+  ColdPathUpgrade,
   CrocImpact,
   HotProxy,
   KnockoutFlagPath,
@@ -26,6 +27,8 @@ const args = commandLineArgs([
   // test mode, if enabled this script deploys three ERC20 contracts for testing
   { name: "test-mode", type: String },
 ]);
+
+const nativedexModuleAddress = "0xe3ADB86F7F0425d08ebD0dfFEbd2eEf19E12D30e";
 
 // sets the gas price for all contract deployments
 const overrides = {
@@ -45,6 +48,7 @@ type CrocPaths = {
   policy: string;
   query: string;
   impact: string;
+  upgrade_test: string;
 };
 
 function get_paths(root: string, include_sol: boolean): CrocPaths {
@@ -61,7 +65,8 @@ function get_paths(root: string, include_sol: boolean): CrocPaths {
       safe_mode: root + "callpaths/SafeModePath.sol/SafeModePath.json",
       policy: root + "governance/CrocPolicy.sol/CrocPolicy.json",
       query: root + "lens/CrocQuery.sol/CrocQuery.json",
-      impact: root + "lens/Impact.sol/Impact.json",
+      impact: root + "lens/CrocImpact.sol/CrocImpact.json",
+      upgrade_test: root + "test/ColdPathUpgrade.sol/ColdPathUpgrade.json",
     };
   }
   return {
@@ -76,7 +81,8 @@ function get_paths(root: string, include_sol: boolean): CrocPaths {
     safe_mode: root + "SafeModePath.json",
     policy: root + "CrocPolicy.json",
     query: root + "CrocQuery.json",
-    impact: root + "Impact.json",
+    impact: root + "CrocImpact.json",
+    upgrade_test: root + "ColdPathUpgrade.json",
   };
 }
 
@@ -208,7 +214,11 @@ async function deploy() {
 
     ({ abi, bytecode } = getContractArtifacts(contract_paths.policy));
     factory = new ethers.ContractFactory(abi, bytecode, wallet);
-    const policy = (await factory.deploy(dexAddress, overrides)) as CrocPolicy;
+    const policy = (await factory.deploy(
+      dexAddress,
+      nativedexModuleAddress,
+      overrides
+    )) as CrocPolicy;
     await policy.deployed();
     const policyAddress = policy.address;
     console.log("CrocPolicy deployed at Address - ", policyAddress);
@@ -227,6 +237,13 @@ async function deploy() {
     await impact.deployed();
     const impactAddress = impact.address;
     console.log("CrocImpact deployed at Address - ", impactAddress);
+
+    ({ abi, bytecode } = getContractArtifacts(contract_paths.upgrade_test));
+    factory = new ethers.ContractFactory(abi, bytecode, wallet);
+    const upgrade = (await factory.deploy(overrides)) as ColdPathUpgrade;
+    await upgrade.deployed();
+    const upgradeAddress = upgrade.address;
+    console.log("ColdPathUpgrade deployed at Address - ", upgradeAddress);
 
     console.log("Installing CrocSwap contracts");
 
@@ -316,14 +333,22 @@ async function deploy() {
     tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
     await tx.wait();
 
+    // Note we do not install the ColdPathUpgrade since it's use is at test runtime
+
     console.log("Setting initial pool liquidity");
     let setPoolLiqCmd = abiCoder.encode(["uint8", "uint128"], [112, 1]);
     tx = await dex.protocolCmd(3, setPoolLiqCmd, true);
     await tx.wait();
-    console.log("Setting default pool template (index 36000");
+    console.log("Setting default pool templates (index 36000, 36001)");
     let templateCmd = abiCoder.encode(
       ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
       [110, 36000, 100, 1, 8, 32 + 6, 0]
+    );
+    tx = await dex.protocolCmd(3, templateCmd, false);
+    await tx.wait();
+    templateCmd = abiCoder.encode(
+      ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
+      [110, 36001, 100, 1, 8, 32 + 6, 0]
     );
     tx = await dex.protocolCmd(3, templateCmd, false);
     await tx.wait();
