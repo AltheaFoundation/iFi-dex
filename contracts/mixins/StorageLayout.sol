@@ -48,6 +48,10 @@ contract StorageLayout {
     
     bool internal inSafeMode_;
 
+    function safeMode() public view returns (bool) {
+        return inSafeMode_;
+    }
+
     // The protocol take rate for relayer tips. Represented in 1/256 fractions
     uint8 internal relayerTakeRate_;
 
@@ -57,6 +61,9 @@ contract StorageLayout {
     // Address of the current dex protocol authority. Can be transferred
     address internal authority_;
 
+    function authority() public view returns (address) {
+        return authority_;
+    }
     /**************************************************************/
     // LevelBook
     /**************************************************************/

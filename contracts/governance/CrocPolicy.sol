@@ -88,13 +88,25 @@ contract CrocPolicy is ICrocMaster {
     address public immutable dex_;
 
     
-    /* @param dex Underlying CrocSwapDex contract */
-    constructor (address dex) {
-        require(dex != address(0) && CrocSwapDex(dex).acceptCrocDex(), "Invalid CrocSwapDex");
+    /*
+     * @param dex Underlying CrocSwapDex contract
+     * @param initialAuthority The authority, or 0x0 for msg.sender
+    */
+    constructor(address dex, address initialAuthority) {
+        require(
+            dex != address(0) && CrocSwapDex(dex).acceptCrocDex(),
+            "Invalid CrocSwapDex"
+        );
         dex_ = dex;
-        opsAuthority_ = msg.sender;
-        treasuryAuthority_ = msg.sender;
-        emergencyAuthority_ = msg.sender;  
+        if (initialAuthority != address(0)) {
+            opsAuthority_ = initialAuthority;
+            treasuryAuthority_ = initialAuthority;
+            emergencyAuthority_ = initialAuthority;
+        } else {
+            opsAuthority_ = msg.sender;
+            treasuryAuthority_ = msg.sender;
+            emergencyAuthority_ = msg.sender;
+        }
     }
 
 

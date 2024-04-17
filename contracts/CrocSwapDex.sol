@@ -85,7 +85,7 @@ contract CrocSwapDex is HotPath, ICrocMinion {
         // By default the embedded hot-path is enabled, but protocol governance can
         // disable by toggling the force proxy flag. If so, users should point to
         // swapProxy.
-        require(hotPathOpen_);
+        require(hotPathOpen_ && !inSafeMode_, "LK");
         return swapExecute(base, quote, poolIdx, isBuy, inBaseQty, qty, tip,
                            limitPrice, minOut, reserveFlags);
     }

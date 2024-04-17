@@ -46,7 +46,7 @@ contract ProxyCaller is StorageLayout {
 
     function assertProxy (uint16 proxyIdx) private view {
         require(proxyPaths_[proxyIdx] != address(0));
-        require(!inSafeMode_ || proxyIdx == CrocSlots.SAFE_MODE_PROXY_PATH || proxyIdx == CrocSlots.BOOT_PROXY_IDX);
+        require(!inSafeMode_ || proxyIdx == CrocSlots.SAFE_MODE_PROXY_PATH || proxyIdx == CrocSlots.BOOT_PROXY_IDX, "SM");
     }
 
     function verifyCallResult (bool success, bytes memory returndata) internal pure returns (bytes memory) {
