@@ -120,9 +120,9 @@ contract CrocPolicy is ICrocMaster {
         opsAuthority_ = ops;
         treasuryAuthority_ = treasury;
         emergencyAuthority_ = emergency;  
-        Timelock(payable(treasury)).acceptAdmin();
-        Timelock(payable(ops)).acceptAdmin();
-        Timelock(payable(emergency)).acceptAdmin();
+        // Timelock(payable(treasury)).acceptAdmin();
+        // Timelock(payable(ops)).acceptAdmin();
+        // Timelock(payable(emergency)).acceptAdmin();
     }
 
     /* @notice Resolution from the ops authority which calls protocolCmd() on the 
