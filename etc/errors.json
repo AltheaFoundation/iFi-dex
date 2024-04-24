@@ -11,6 +11,7 @@
     "J": "Pool not initialized",
     "K": "Settle flow below required qty",
     "L": "Max liquidity exceeded",
+    "LK": "Swaps are locked due to safe mode or hot path not open",
     "M": "Mezzanine bitmap broken",
     "MQ": "Max quote liquidity",
     "N": "Already initialized",
@@ -33,5 +34,5 @@
     "V": "Insufficient liquidity in level",
     "X": "Tick below max",
     "Y": "Lobby bitmap broken",
-    "Z": "Not authorized for pool",
+    "Z": "Not authorized for pool"
 }
