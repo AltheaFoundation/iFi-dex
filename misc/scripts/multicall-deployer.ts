@@ -9,6 +9,8 @@ const args = commandLineArgs([
   { name: "eth-node", type: String },
   // the Ethereum private key that will contain the gas required to pay for the contact deployment
   { name: "eth-privkey", type: String },
+  // The location of the artifacts
+  { name: "artifacts-root", type: String },
 ]);
 
 const nativedexModuleAddress = "0xe3ADB86F7F0425d08ebD0dfFEbd2eEf19E12D30e";
@@ -30,7 +32,7 @@ async function deploy() {
   var startTime = new Date();
   const provider = await new ethers.providers.JsonRpcProvider(args["eth-node"]);
   let wallet = new ethers.Wallet(args["eth-privkey"], provider);
-  const testMode = args["test-mode"] == "True" || args["test-mode"] == "true";
+  let artifacts = args["artifacts-root"];
 
     var success = false;
     while (!success) {
@@ -53,29 +55,11 @@ async function deploy() {
 
     console.log("Deploying ERC20 contract");
 
-    // this handles several possible locations for the ERC20 artifacts
-    var contract_path: string;
-    const root_main = "/althea/solidity-dex/artifacts/contracts/periphery/";
-    const main_location_a = root_main + "Multicall3.sol/Multicall3.json";
-
-    const root_alt_1 = "/solidity-dex/periphery/";
-    const alt_location_1_a = root_alt_1 + "Multicall3.json";
-
-    const alt_location_2_a = "Multicall3.json";
-
-    var contract_path: string;
-    if (fs.existsSync(main_location_a)) {
-      contract_path = get_path(root_main, true);
-    } else if (fs.existsSync(alt_location_1_a)) {
-      contract_path = get_path(root_alt_1, false);
-    } else if (fs.existsSync(alt_location_2_a)) {
-      contract_path = get_path("", false);
-    } else {
-      console.log(
-        "Contract can't be found!"
-      );
+    if (!fs.existsSync(artifacts)) {
+      console.log("Artifacts directory not found!");
       exit(1);
     }
+    var contract_path = get_path(artifacts, true);
 
     var abi;
     var bytecode;
