@@ -33,6 +33,7 @@ import '../mixins/ProtocolAccount.sol';
 contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
 
     using SafeCast for uint128;
+    using SafeCast for int128;
     using TokenFlow for TokenFlow.PairSeq;
     using CurveMath for CurveMath.CurveState;
     using Chaining for Chaining.PairFlow;
@@ -134,8 +135,10 @@ contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
         PoolSpecs.PoolCursor memory pool = queryPool(base, quote, poolIdx);
         verifyPermitMint(pool, base, quote, bidTick, askTick, liq);
 
-        return mintOverPool(bidTick, askTick, liq, pool, limitLower, limitHigher,
+        (int128 baseFlow, int128 quoteFlow) = mintOverPool(bidTick, askTick, liq, pool, limitLower, limitHigher,
                             lpConduit);
+        emit CrocEvents.MintRanged(lockHolder_, base, quote, poolIdx, liq, bidTick, askTick, baseFlow.unsigned128(), quoteFlow.unsigned128());
+        return (baseFlow, quoteFlow);
     }
     
     /* @notice Burns liquidity as a concentrated liquidity range order.
@@ -160,8 +163,10 @@ contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
         PoolSpecs.PoolCursor memory pool = queryPool(base, quote, poolIdx);
         verifyPermitBurn(pool, base, quote, bidTick, askTick, liq);
         
-        return burnOverPool(bidTick, askTick, liq, pool, limitLower, limitHigher,
+        (int128 baseFlow, int128 quoteFlow) = burnOverPool(bidTick, askTick, liq, pool, limitLower, limitHigher,
                             lpConduit);
+        emit CrocEvents.BurnRanged(lockHolder_, base, quote, poolIdx, liq, bidTick, askTick, baseFlow.unsigned128(), quoteFlow.unsigned128());
+        return (baseFlow, quoteFlow);
     }
 
     /* @notice Harvests the rewards for a concentrated liquidity position.
@@ -188,8 +193,10 @@ contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
         // be returned, so oracles should handle 0 as special case if that's an issue. 
         verifyPermitBurn(pool, base, quote, bidTick, askTick, 0);
         
-        return harvestOverPool(bidTick, askTick, pool, limitLower, limitHigher,
+        (int128 baseFlow, int128 quoteFlow) = harvestOverPool(bidTick, askTick, pool, limitLower, limitHigher,
                                lpConduit);
+        emit CrocEvents.Harvest(lockHolder_, base, quote, poolIdx, bidTick, askTick, baseFlow.unsigned128(), quoteFlow.unsigned128());
+        return (baseFlow, quoteFlow);
     }
 
     /* @notice Mints ambient liquidity that's active at every price.
@@ -210,7 +217,9 @@ contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
         returns (int128, int128) {
         PoolSpecs.PoolCursor memory pool = queryPool(base, quote, poolIdx);
         verifyPermitMint(pool, base, quote, 0, 0, liq);
-        return mintOverPool(liq, pool, limitLower, limitHigher, lpConduit);
+        (int128 baseFlow, int128 quoteFlow) = mintOverPool(liq, pool, limitLower, limitHigher, lpConduit);
+        emit CrocEvents.MintAmbient(lockHolder_, base, quote, poolIdx, liq, baseFlow.unsigned128(), quoteFlow.unsigned128());
+        return (baseFlow, quoteFlow);
     }
 
     function mintAmbientQty (address base, address quote, uint256 poolIdx, bool inBase,
@@ -265,7 +274,9 @@ contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
         returns (int128, int128) {
         PoolSpecs.PoolCursor memory pool = queryPool(base, quote, poolIdx);
         verifyPermitBurn(pool, base, quote, 0, 0, liq);
-        return burnOverPool(liq, pool, limitLower, limitHigher, lpConduit);
+        (int128 baseFlow, int128 quoteFlow) = burnOverPool(liq, pool, limitLower, limitHigher, lpConduit);
+        emit CrocEvents.BurnAmbient(lockHolder_, base, quote, poolIdx, liq, baseFlow.unsigned128(), quoteFlow.unsigned128());
+        return (baseFlow, quoteFlow);
     }
 
     function burnAmbientQty (address base, address quote, uint256 poolIdx, bool inBase,

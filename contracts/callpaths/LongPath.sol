@@ -58,7 +58,7 @@ contract LongPath is MarketSequencer, SettleLayer, ProtocolAccount {
                              dir.ambient_, dir.swap_, dir.conc_);
                 cntx.roll_ = targetRoll(dir.chain_, pairs);
 
-                tradeOverPool(pairs.flow_, dir, cntx);
+                tradeOverPool(pairs, dir, cntx);
             }
 
             accumProtocolFees(pairs); // Make sure to call before clipping              

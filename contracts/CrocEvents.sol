@@ -4,6 +4,75 @@ pragma solidity 0.8.19;
 
 library CrocEvents {
 
+    /* @notice Emitted whenever a swap is performed, exchanging buy tokens for sell tokens.
+     * @param user The address of the user performing the swap.
+     * @param buy The address of the token being bought.
+     * @param sell The address of the token being sold.
+     * @param poolIdx The template of the relevant pool.
+     * @param buyQty The quantity of buy tokens being exchanged.
+     * @param sellQty The quantity of sell tokens being exchanged.
+     */
+    event Swap(address indexed user, address indexed buy, address indexed sell, uint256 poolIdx, uint128 buyQty, uint128 sellQty);
+
+    /* @notice Emitted when a concentrated liquidity position is created, or additional liquidity is added to an existing position.
+     * @param user The address of the user performing the mint.
+     * @param base The address of the base token involved.
+     * @param quote The address of the quote token involved.
+     * @param poolIdx The template of the relevant pool.
+     * @param liq The amount of liquidity (in sqrt(X*Y) terms) being added to the pool.
+     * @param bidTick The lower price tick of the range position.
+     * @param askTick The upper price tick of the range position.
+     * @param baseQty The quantity of base tokens added to the pool.
+     * @param quoteQty The quantity of quote tokens added to the pool.
+     */
+    event MintRanged(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, int24 bidTick, int24 askTick, uint128 baseQty, uint128 quoteQty);
+
+    /* @notice Emitted when a concentrated liquidity position is burned, removing the liquidity from the pool.
+     * @param user The address of the user performing the burn.
+     * @param base The address of the base token involved.
+     * @param quote The address of the quote token involved.
+     * @param poolIdx The template of the relevant pool.
+     * @param liq The amount of liquidity (in sqrt(X*Y) terms) being removed from the pool.
+     * @param bidTick The lower price tick of the range position.
+     * @param askTick The upper price tick of the range position.
+     * @param baseQty The quantity of base tokens removed from the pool.
+     * @param quoteQty The quantity of quote tokens removed from the pool.
+     */
+    event BurnRanged(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, int24 bidTick, int24 askTick, uint128 baseQty, uint128 quoteQty);
+
+    /* @notice Emitted when a concentrated position's ambient rewards are harvested, removing ambient liquidity from the pool.
+     * @param user The address of the user performing the harvest.
+     * @param base The address of the base token involved.
+     * @param quote The address of the quote token involved.
+     * @param poolIdx The template of the relevant pool.
+     * @param bidTick The lower price tick of the range position.
+     * @param askTick The upper price tick of the range position.
+     * @param baseQty The amount of base tokens harvested.
+     * @param quoteQty The amount of quote tokens harvested.
+     */
+    event Harvest(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int24 bidTick, int24 askTick, uint128 baseQty, uint128 quoteQty);
+
+    /* @notice Emitted when an ambient (full range) liquidity position is created, or additional liquidity is added to an existing position.
+     * @param user The address of the user performing the mint.
+     * @param base The address of the base token involved.
+     * @param quote The address of the quote token involved.
+     * @param poolIdx The template of the relevant pool.
+     * @param liq The amount of liquidity (in sqrt(X*Y) terms) being added to the pool.
+     * @param baseQty The quantity of base tokens added to the pool.
+     * @param quoteQty The quantity of quote tokens added to the pool.
+     */
+    event MintAmbient(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, uint128 baseQty, uint128 quoteQty);
+
+    /* @notice Emitted when an ambient (full range) liquidity position is burned, removing the liquidity from the pool.
+     * @param user The address of the user performing the mint.
+     * @param base The address of the base token involved.
+     * @param quote The address of the quote token involved.
+     * @param poolIdx The template of the relevant pool.
+     * @param liq The amount of liquidity (in sqrt(X*Y) terms) being removed from the pool.
+     * @param baseQty The quantity of base tokens removed from the pool.
+     * @param quoteQty The quantity of quote tokens removed from the pool.
+     */
+    event BurnAmbient(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, uint128 baseQty, uint128 quoteQty);
 
     /* @notice Emitted when governance authority for CrocSwapDex is transfered.
      * @param The authority being transfered to. */
@@ -34,6 +103,17 @@ library CrocEvents {
      * @param oracleFlags The permissioned pool oracle flags if this is setup as a permissioned pool. */
     event SetPoolTemplate (uint256 indexed poolIdx, uint16 feeRate, uint16 tickSize,
                            uint8 jitThresh, uint8 knockout, uint8 oracleFlags);
+
+    /* @notice Emitted when a new pool has been created for a given base and quote token pair using a template index of poolIdx.
+     * @param base The base token of the pool.
+     * @param quote The quote token of the pool.
+     * @param poolIdx The pool's template.
+     * @param price The initial price of the pool. Represented as square root price in Q64.64 notation.
+     * @param user The address of the user creating the pool.
+     * @param liq The initial liquidity of the pool.
+     * @param baseQty The initial base token quantity of the pool.
+     * @param quoteQty The initial quote token quantity of the pool. */
+    event InitPool(address indexed base, address indexed quote, uint256 indexed poolIdx, uint128 price, address user, uint128 liq, uint128 baseQty, uint128 quoteQty);
 
     /* @notice Emitted when a previously created pool with a pre-existing protocol take rate is re-
      *         sychronized to the current dex-wide protocol take rate setting. 
