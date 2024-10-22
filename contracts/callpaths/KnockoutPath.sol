@@ -10,6 +10,7 @@ import '../libraries/ProtocolCmd.sol';
 import '../mixins/SettleLayer.sol';
 import '../mixins/PoolRegistry.sol';
 import '../mixins/TradeMatcher.sol';
+import '../CrocEvents.sol';
 
 /* @title Knockout Flag Proxy
  * @notice This is an internal library callpath that's called when a swap triggers a 
@@ -59,6 +60,7 @@ contract KnockoutFlagPath is KnockoutCounter {
  *         recovering a user's posted knockout liquidity. */
 contract KnockoutLiqPath is TradeMatcher, SettleLayer {
     using SafeCast for uint128;
+    using SafeCast for int128;
     using TickMath for uint128;
     using TokenFlow for TokenFlow.PairSeq;
     using CurveMath for CurveMath.CurveState;
@@ -81,12 +83,12 @@ contract KnockoutLiqPath is TradeMatcher, SettleLayer {
         loc.lowerTick_ = bidTick;
         loc.upperTick_ = askTick;
 
-        return overCurve(code, base, quote, pool, curve, loc, reserveFlags, args);
+        return overCurve(code, base, quote, poolIdx, pool, curve, loc, reserveFlags, args);
     }
 
     /* @notice Converts a call code, pool address, curvedata and knockout position 
      *         location to execute a knockout LP command. */
-    function overCurve (uint8 code, address base, address quote,
+    function overCurve (uint8 code, address base, address quote, uint256 poolIdx,
                         PoolSpecs.PoolCursor memory pool,
                         CurveMath.CurveState memory curve,
                         KnockoutLiq.KnockoutPosLoc memory loc,
@@ -94,12 +96,17 @@ contract KnockoutLiqPath is TradeMatcher, SettleLayer {
         private returns (int128 baseFlow, int128 quoteFlow) {        
         if (code == UserCmd.MINT_KNOCKOUT) {
             (baseFlow, quoteFlow) = mintCmd(base, quote, pool, curve, loc, args);
+            (uint128 qty,) = abi.decode(args, (uint128,bool));
+            emit CrocEvents.MintKnockout(lockHolder_, base, quote, poolIdx, qty, loc.isBid_, loc.lowerTick_, loc.upperTick_);
         } else if (code == UserCmd.BURN_KNOCKOUT) {
             (baseFlow, quoteFlow) = burnCmd(base, quote, pool, curve, loc, args);
+            emit CrocEvents.BurnKnockout(lockHolder_, base, quote, poolIdx, baseFlow.unsigned128(), quoteFlow.unsigned128(), loc.lowerTick_, loc.upperTick_);
         } else if (code == UserCmd.CLAIM_KNOCKOUT) {
             (baseFlow, quoteFlow) = claimCmd(pool.hash_, curve, loc, args);
+            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow.unsigned128(), quoteFlow.unsigned128(), loc.lowerTick_, loc.upperTick_, true);
         } else if (code == UserCmd.RECOVER_KNOCKOUT) {
             (baseFlow, quoteFlow) = recoverCmd(pool.hash_, loc, args);
+            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow.unsigned128(), quoteFlow.unsigned128(), loc.lowerTick_, loc.upperTick_, false);
         } else {
             revert("Invalid command");
         }

@@ -74,6 +74,42 @@ library CrocEvents {
      */
     event BurnAmbient(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, uint128 baseQty, uint128 quoteQty);
 
+    /* @notice Emitted when a knockout liquidity position is minted, adding one-way liquidity to the pool.
+     * @param user The address of the position holder.
+     * @param base The address of the base token involved.
+     * @param quote The address of the quote token involved.
+     * @param poolIdx The template of the relevant pool.
+     * @param qty The amount of base (quote) tokens being added to the pool if isBid is (not) true
+     * @param lowerTick The lower price tick of the range position.
+     * @param upperTick The upper price tick of the range position.
+     */
+    event MintKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 qty, bool isBid, int24 lowerTick, int24 upperTick);
+
+    /* @notice Emitted when a knockout liquidity position is burned, removing an in-progress knockout position from the pool.
+     * @param user The address of the position holder.
+     * @param base The address of the base token involved.
+     * @param quote The address of the quote token involved.
+     * @param poolIdx The template of the relevant pool.
+     * @param baseQty The amount of base tokens being removed from the pool
+     * @param quoteQty The amount of quote tokens being removed from the pool
+     * @param lowerTick The lower price tick of the range position.
+     * @param upperTick The upper price tick of the range position.
+     */
+    event BurnKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 baseQty, uint128 quoteQty, int24 lowerTick, int24 upperTick);
+
+    /* @notice Emitted when a complete knockout liquidity position is claimed or recovered, deleting the position from the pool.
+     * @param user The address of the position holder.
+     * @param base The address of the base token involved.
+     * @param quote The address of the quote token involved.
+     * @param poolIdx The template of the relevant pool.
+     * @param baseQty The amount of base tokens being removed from the pool
+     * @param quoteQty The amount of quote tokens being removed from the pool
+     * @param lowerTick The lower price tick of the range position.
+     * @param upperTick The upper price tick of the range position.
+     * @param proven Indicates a correct proof was provided and earned fees were collected.
+     */
+    event WithdrawKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 baseQty, uint128 quoteQty, int24 lowerTick, int24 upperTick, bool proven);
+
     /* @notice Emitted when governance authority for CrocSwapDex is transfered.
      * @param The authority being transfered to. */
     event AuthorityTransfer (address indexed authority);
