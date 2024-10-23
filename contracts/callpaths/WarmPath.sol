@@ -33,7 +33,6 @@ import '../mixins/ProtocolAccount.sol';
 contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
 
     using SafeCast for uint128;
-    using SafeCast for int128;
     using TokenFlow for TokenFlow.PairSeq;
     using CurveMath for CurveMath.CurveState;
     using Chaining for Chaining.PairFlow;
@@ -137,7 +136,7 @@ contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
 
         (int128 baseFlow, int128 quoteFlow) = mintOverPool(bidTick, askTick, liq, pool, limitLower, limitHigher,
                             lpConduit);
-        emit CrocEvents.MintRanged(lockHolder_, base, quote, poolIdx, liq, bidTick, askTick, baseFlow.unsigned128(), quoteFlow.unsigned128());
+        emit CrocEvents.MintRanged(lockHolder_, base, quote, poolIdx, liq, bidTick, askTick, baseFlow, quoteFlow);
         return (baseFlow, quoteFlow);
     }
     
@@ -165,7 +164,7 @@ contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
         
         (int128 baseFlow, int128 quoteFlow) = burnOverPool(bidTick, askTick, liq, pool, limitLower, limitHigher,
                             lpConduit);
-        emit CrocEvents.BurnRanged(lockHolder_, base, quote, poolIdx, liq, bidTick, askTick, baseFlow.unsigned128(), quoteFlow.unsigned128());
+        emit CrocEvents.BurnRanged(lockHolder_, base, quote, poolIdx, liq, bidTick, askTick, baseFlow, quoteFlow);
         return (baseFlow, quoteFlow);
     }
 
@@ -195,7 +194,7 @@ contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
         
         (int128 baseFlow, int128 quoteFlow) = harvestOverPool(bidTick, askTick, pool, limitLower, limitHigher,
                                lpConduit);
-        emit CrocEvents.Harvest(lockHolder_, base, quote, poolIdx, bidTick, askTick, baseFlow.unsigned128(), quoteFlow.unsigned128());
+        emit CrocEvents.Harvest(lockHolder_, base, quote, poolIdx, bidTick, askTick, baseFlow, quoteFlow);
         return (baseFlow, quoteFlow);
     }
 
@@ -218,7 +217,7 @@ contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
         PoolSpecs.PoolCursor memory pool = queryPool(base, quote, poolIdx);
         verifyPermitMint(pool, base, quote, 0, 0, liq);
         (int128 baseFlow, int128 quoteFlow) = mintOverPool(liq, pool, limitLower, limitHigher, lpConduit);
-        emit CrocEvents.MintAmbient(lockHolder_, base, quote, poolIdx, liq, baseFlow.unsigned128(), quoteFlow.unsigned128());
+        emit CrocEvents.MintAmbient(lockHolder_, base, quote, poolIdx, liq, baseFlow, quoteFlow);
         return (baseFlow, quoteFlow);
     }
 
@@ -275,7 +274,7 @@ contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
         PoolSpecs.PoolCursor memory pool = queryPool(base, quote, poolIdx);
         verifyPermitBurn(pool, base, quote, 0, 0, liq);
         (int128 baseFlow, int128 quoteFlow) = burnOverPool(liq, pool, limitLower, limitHigher, lpConduit);
-        emit CrocEvents.BurnAmbient(lockHolder_, base, quote, poolIdx, liq, baseFlow.unsigned128(), quoteFlow.unsigned128());
+        emit CrocEvents.BurnAmbient(lockHolder_, base, quote, poolIdx, liq, baseFlow, quoteFlow);
         return (baseFlow, quoteFlow);
     }
 

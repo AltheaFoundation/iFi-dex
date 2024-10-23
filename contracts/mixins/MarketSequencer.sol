@@ -23,7 +23,6 @@ import './TradeMatcher.sol';
 contract MarketSequencer is TradeMatcher {
 
     using SafeCast for int256;
-    using SafeCast for int128;
     using SafeCast for uint256;
     using SafeCast for uint128;
     using TickMath for uint128;
@@ -79,9 +78,9 @@ contract MarketSequencer is TradeMatcher {
         sweepSwapLiq(flow, curve, curve.priceRoot_.getTickAtSqrtRatio(), dir, pool);
         commitCurve(pool.hash_, curve);
         if (isBuy) {
-            emit CrocEvents.Swap(lockHolder_, base, quote, poolIdx, flow.baseFlow_.unsigned128(), flow.quoteFlow_.unsigned128());
+            emit CrocEvents.Swap(lockHolder_, base, quote, poolIdx, flow.baseFlow_, flow.quoteFlow_);
         } else {
-            emit CrocEvents.Swap(lockHolder_, quote, base, poolIdx, flow.quoteFlow_.unsigned128(), flow.baseFlow_.unsigned128());
+            emit CrocEvents.Swap(lockHolder_, quote, base, poolIdx, flow.quoteFlow_, flow.baseFlow_);
         }
     }
 
@@ -289,10 +288,10 @@ contract MarketSequencer is TradeMatcher {
             callSwap(flow, curve, dir, cntx.pool_);            
             if (dir.isBuy_) {
                 emit CrocEvents.Swap(lockHolder_, pairs.baseToken_, pairs.quoteToken_,
-                                     poolIdx, flow.baseFlow_.unsigned128(), flow.quoteFlow_.unsigned128());
+                                     poolIdx, flow.baseFlow_, flow.quoteFlow_);
             } else {
                 emit CrocEvents.Swap(lockHolder_, pairs.quoteToken_, pairs.baseToken_,
-                                     poolIdx, flow.quoteFlow_.unsigned128(), flow.baseFlow_.unsigned128());
+                                     poolIdx, flow.quoteFlow_, flow.baseFlow_);
             }
         }
     }
@@ -312,11 +311,11 @@ contract MarketSequencer is TradeMatcher {
             if (dir.isAdd_) {
                 (base, quote) = callMintAmbient(curve, dir.liquidity_, cntx.pool_.hash_);
                 emit CrocEvents.MintAmbient(lockHolder_, pairs.baseToken_, pairs.quoteToken_,
-                                            poolIdx, dir.liquidity_, base.unsigned128(), quote.unsigned128());
+                                            poolIdx, dir.liquidity_, base, quote);
             } else {
                 (base, quote) = callBurnAmbient(curve, dir.liquidity_, cntx.pool_.hash_);
                 emit CrocEvents.BurnAmbient(lockHolder_, pairs.baseToken_, pairs.quoteToken_,
-                                            poolIdx, dir.liquidity_, base.unsigned128(), quote.unsigned128());
+                                            poolIdx, dir.liquidity_, base, quote);
 
             }
         
@@ -392,13 +391,13 @@ contract MarketSequencer is TradeMatcher {
             (int128 baseFlow, int128 quoteFlow) = callMintRange(curve, bend.lowTick_, bend.highTick_,
                           bend.liquidity_, cntx.pool_.hash_);
             emit CrocEvents.MintRanged(lockHolder_, pairs.baseToken_, pairs.quoteToken_,
-                                       poolIdx, bend.liquidity_, bend.lowTick_, bend.highTick_, baseFlow.unsigned128(), quoteFlow.unsigned128());
+                                       poolIdx, bend.liquidity_, bend.lowTick_, bend.highTick_, baseFlow, quoteFlow);
             return (baseFlow, quoteFlow);
         } else {
             (int128 baseFlow, int128 quoteFlow) = callBurnRange(curve, bend.lowTick_, bend.highTick_,
                           bend.liquidity_, cntx.pool_.hash_);
             emit CrocEvents.BurnRanged(lockHolder_, pairs.baseToken_, pairs.quoteToken_,
-                                       poolIdx, bend.liquidity_, bend.lowTick_, bend.highTick_, baseFlow.unsigned128(), quoteFlow.unsigned128());
+                                       poolIdx, bend.liquidity_, bend.lowTick_, bend.highTick_, baseFlow, quoteFlow);
             return (baseFlow, quoteFlow);
         }
     }

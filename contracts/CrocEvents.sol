@@ -9,10 +9,10 @@ library CrocEvents {
      * @param buy The address of the token being bought.
      * @param sell The address of the token being sold.
      * @param poolIdx The template of the relevant pool.
-     * @param buyQty The quantity of buy tokens being exchanged.
-     * @param sellQty The quantity of sell tokens being exchanged.
+     * @param buyFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param sellFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      */
-    event Swap(address indexed user, address indexed buy, address indexed sell, uint256 poolIdx, uint128 buyQty, uint128 sellQty);
+    event Swap(address indexed user, address indexed buy, address indexed sell, uint256 poolIdx, int128 buyFlow, int128 sellFlow);
 
     /* @notice Emitted when a concentrated liquidity position is created, or additional liquidity is added to an existing position.
      * @param user The address of the user performing the mint.
@@ -22,10 +22,10 @@ library CrocEvents {
      * @param liq The amount of liquidity (in sqrt(X*Y) terms) being added to the pool.
      * @param bidTick The lower price tick of the range position.
      * @param askTick The upper price tick of the range position.
-     * @param baseQty The quantity of base tokens added to the pool.
-     * @param quoteQty The quantity of quote tokens added to the pool.
+     * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      */
-    event MintRanged(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, int24 bidTick, int24 askTick, uint128 baseQty, uint128 quoteQty);
+    event MintRanged(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, int24 bidTick, int24 askTick, int128 baseFlow, int128 quoteFlow);
 
     /* @notice Emitted when a concentrated liquidity position is burned, removing the liquidity from the pool.
      * @param user The address of the user performing the burn.
@@ -35,10 +35,10 @@ library CrocEvents {
      * @param liq The amount of liquidity (in sqrt(X*Y) terms) being removed from the pool.
      * @param bidTick The lower price tick of the range position.
      * @param askTick The upper price tick of the range position.
-     * @param baseQty The quantity of base tokens removed from the pool.
-     * @param quoteQty The quantity of quote tokens removed from the pool.
+     * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      */
-    event BurnRanged(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, int24 bidTick, int24 askTick, uint128 baseQty, uint128 quoteQty);
+    event BurnRanged(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, int24 bidTick, int24 askTick, int128 baseFlow, int128 quoteFlow);
 
     /* @notice Emitted when a concentrated position's ambient rewards are harvested, removing ambient liquidity from the pool.
      * @param user The address of the user performing the harvest.
@@ -47,10 +47,10 @@ library CrocEvents {
      * @param poolIdx The template of the relevant pool.
      * @param bidTick The lower price tick of the range position.
      * @param askTick The upper price tick of the range position.
-     * @param baseQty The amount of base tokens harvested.
-     * @param quoteQty The amount of quote tokens harvested.
+     * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      */
-    event Harvest(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int24 bidTick, int24 askTick, uint128 baseQty, uint128 quoteQty);
+    event Harvest(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int24 bidTick, int24 askTick, int128 baseFlow, int128 quoteFlow);
 
     /* @notice Emitted when an ambient (full range) liquidity position is created, or additional liquidity is added to an existing position.
      * @param user The address of the user performing the mint.
@@ -58,10 +58,10 @@ library CrocEvents {
      * @param quote The address of the quote token involved.
      * @param poolIdx The template of the relevant pool.
      * @param liq The amount of liquidity (in sqrt(X*Y) terms) being added to the pool.
-     * @param baseQty The quantity of base tokens added to the pool.
-     * @param quoteQty The quantity of quote tokens added to the pool.
+     * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      */
-    event MintAmbient(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, uint128 baseQty, uint128 quoteQty);
+    event MintAmbient(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, int128 baseFlow, int128 quoteFlow);
 
     /* @notice Emitted when an ambient (full range) liquidity position is burned, removing the liquidity from the pool.
      * @param user The address of the user performing the mint.
@@ -69,10 +69,10 @@ library CrocEvents {
      * @param quote The address of the quote token involved.
      * @param poolIdx The template of the relevant pool.
      * @param liq The amount of liquidity (in sqrt(X*Y) terms) being removed from the pool.
-     * @param baseQty The quantity of base tokens removed from the pool.
-     * @param quoteQty The quantity of quote tokens removed from the pool.
+     * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      */
-    event BurnAmbient(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, uint128 baseQty, uint128 quoteQty);
+    event BurnAmbient(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, int128 baseFlow, int128 quoteFlow);
 
     /* @notice Emitted when a knockout liquidity position is minted, adding one-way liquidity to the pool.
      * @param user The address of the position holder.
@@ -90,25 +90,25 @@ library CrocEvents {
      * @param base The address of the base token involved.
      * @param quote The address of the quote token involved.
      * @param poolIdx The template of the relevant pool.
-     * @param baseQty The amount of base tokens being removed from the pool
-     * @param quoteQty The amount of quote tokens being removed from the pool
+     * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      * @param lowerTick The lower price tick of the range position.
      * @param upperTick The upper price tick of the range position.
      */
-    event BurnKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 baseQty, uint128 quoteQty, int24 lowerTick, int24 upperTick);
+    event BurnKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, int24 lowerTick, int24 upperTick);
 
     /* @notice Emitted when a complete knockout liquidity position is claimed or recovered, deleting the position from the pool.
      * @param user The address of the position holder.
      * @param base The address of the base token involved.
      * @param quote The address of the quote token involved.
      * @param poolIdx The template of the relevant pool.
-     * @param baseQty The amount of base tokens being removed from the pool
-     * @param quoteQty The amount of quote tokens being removed from the pool
+     * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      * @param lowerTick The lower price tick of the range position.
      * @param upperTick The upper price tick of the range position.
      * @param proven Indicates a correct proof was provided and earned fees were collected.
      */
-    event WithdrawKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 baseQty, uint128 quoteQty, int24 lowerTick, int24 upperTick, bool proven);
+    event WithdrawKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, int24 lowerTick, int24 upperTick, bool proven);
 
     /* @notice Emitted when governance authority for CrocSwapDex is transfered.
      * @param The authority being transfered to. */
@@ -147,9 +147,9 @@ library CrocEvents {
      * @param price The initial price of the pool. Represented as square root price in Q64.64 notation.
      * @param user The address of the user creating the pool.
      * @param liq The initial liquidity of the pool.
-     * @param baseQty The initial base token quantity of the pool.
-     * @param quoteQty The initial quote token quantity of the pool. */
-    event InitPool(address indexed base, address indexed quote, uint256 indexed poolIdx, uint128 price, address user, uint128 liq, uint128 baseQty, uint128 quoteQty);
+     * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it */
+    event InitPool(address indexed base, address indexed quote, uint256 indexed poolIdx, uint128 price, address user, uint128 liq, int128 baseFlow, int128 quoteFlow);
 
     /* @notice Emitted when a previously created pool with a pre-existing protocol take rate is re-
      *         sychronized to the current dex-wide protocol take rate setting. 

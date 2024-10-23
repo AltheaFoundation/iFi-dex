@@ -60,7 +60,6 @@ contract KnockoutFlagPath is KnockoutCounter {
  *         recovering a user's posted knockout liquidity. */
 contract KnockoutLiqPath is TradeMatcher, SettleLayer {
     using SafeCast for uint128;
-    using SafeCast for int128;
     using TickMath for uint128;
     using TokenFlow for TokenFlow.PairSeq;
     using CurveMath for CurveMath.CurveState;
@@ -100,13 +99,13 @@ contract KnockoutLiqPath is TradeMatcher, SettleLayer {
             emit CrocEvents.MintKnockout(lockHolder_, base, quote, poolIdx, qty, loc.isBid_, loc.lowerTick_, loc.upperTick_);
         } else if (code == UserCmd.BURN_KNOCKOUT) {
             (baseFlow, quoteFlow) = burnCmd(base, quote, pool, curve, loc, args);
-            emit CrocEvents.BurnKnockout(lockHolder_, base, quote, poolIdx, baseFlow.unsigned128(), quoteFlow.unsigned128(), loc.lowerTick_, loc.upperTick_);
+            emit CrocEvents.BurnKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_);
         } else if (code == UserCmd.CLAIM_KNOCKOUT) {
             (baseFlow, quoteFlow) = claimCmd(pool.hash_, curve, loc, args);
-            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow.unsigned128(), quoteFlow.unsigned128(), loc.lowerTick_, loc.upperTick_, true);
+            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_, true);
         } else if (code == UserCmd.RECOVER_KNOCKOUT) {
             (baseFlow, quoteFlow) = recoverCmd(pool.hash_, loc, args);
-            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow.unsigned128(), quoteFlow.unsigned128(), loc.lowerTick_, loc.upperTick_, false);
+            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_, false);
         } else {
             revert("Invalid command");
         }

@@ -50,11 +50,6 @@ library SafeCast {
         }
     }
 
-    function unsigned128(int128 x) internal pure returns (uint128) {
-        if (x < 0) { return uint128(-x); }
-        return uint128(x);
-    }
-
     // Unix timestamp can fit into 32-bits until the year 2106. After which, internally
     // stored timestamps will stop increasing. Deployed contracts relying on this function
     // should be re-evaluated before that date.

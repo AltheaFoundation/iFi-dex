@@ -28,7 +28,6 @@ import '../CrocEvents.sol';
  *         within the primary CrocSwap contract. */
 contract ColdPath is MarketSequencer, DepositDesk, ProtocolAccount {
     using SafeCast for uint128;
-    using SafeCast for int128;
     using TokenFlow for TokenFlow.PairSeq;
     using CurveMath for CurveMath.CurveState;
     using Chaining for Chaining.PairFlow;
@@ -127,7 +126,7 @@ contract ColdPath is MarketSequencer, DepositDesk, ProtocolAccount {
         (int128 baseFlow, int128 quoteFlow) = initCurve(pool, price, initLiq);
         settleInitFlow(lockHolder_, base, baseFlow, quote, quoteFlow);
 
-        emit CrocEvents.InitPool(base, quote, poolIdx, price, lockHolder_, initLiq, baseFlow.unsigned128(), quoteFlow.unsigned128());
+        emit CrocEvents.InitPool(base, quote, poolIdx, price, lockHolder_, initLiq, baseFlow, quoteFlow);
     }
 
     /* @notice Disables an existing pool template. Any previously instantiated pools on
