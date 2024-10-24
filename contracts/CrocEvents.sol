@@ -160,6 +160,18 @@ library CrocEvents {
     event ResyncTakeRate (address indexed base, address indexed quote,
                           uint256 indexed poolIdx, uint8 takeRate);
 
+    /* @notice Emitted when a previously created pool is revised to have new pool specs.
+     * @param base The base token of the pool.
+     * @param quote The quote token of the pool.
+     * @param poolIdx The pool type index of the pool.
+     * @param feeRate The pool's swap fee rate in multiples of 0.0001%
+     * @param tickSize The pool's price grid size in ticks.
+     * @param jitThresh The minimum resting time (in seconds) for concentrated LPs in
+     *                  in the pool.
+     * @param knockout The knockout bit flags for the pool. */
+    event PoolRevision (address indexed base, address indexed quote, uint256 indexed poolIdx, uint16 feeRate, uint16 tickSize, uint8 jitThresh, uint8 knockout);
+
+
     /* @notice Emitted when new minimum thresholds are set for off-grid price improvement liquidity
      *         thresholds.
      * @param token The token the thresholds apply to.

@@ -201,6 +201,7 @@ contract ColdPath is MarketSequencer, DepositDesk, ProtocolAccount {
          uint16 feeRate, uint16 tickSize, uint8 jitThresh, uint8 knockout) =
             abi.decode(cmd, (uint8,address,address,uint256,uint16,uint16,uint8,uint8));
         setPoolSpecs(base, quote, poolIdx, feeRate, tickSize, jitThresh, knockout);
+        emit CrocEvents.PoolRevision(base, quote, poolIdx, feeRate, tickSize, jitThresh, knockout);
     }
 
     /* @notice Set off-grid price improvement.
