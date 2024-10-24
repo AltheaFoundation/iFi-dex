@@ -101,11 +101,12 @@ contract KnockoutLiqPath is TradeMatcher, SettleLayer {
             (baseFlow, quoteFlow) = burnCmd(base, quote, pool, curve, loc, args);
             emit CrocEvents.BurnKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_);
         } else if (code == UserCmd.CLAIM_KNOCKOUT) {
-            (baseFlow, quoteFlow) = claimCmd(pool.hash_, curve, loc, args);
-            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_, true);
+            uint128 rewardFees = 0;
+            (baseFlow, quoteFlow, rewardFees) = claimCmd(pool.hash_, curve, loc, args);
+            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_, rewardFees);
         } else if (code == UserCmd.RECOVER_KNOCKOUT) {
             (baseFlow, quoteFlow) = recoverCmd(pool.hash_, loc, args);
-            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_, false);
+            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_, 0);
         } else {
             revert("Invalid command");
         }
@@ -169,12 +170,12 @@ contract KnockoutLiqPath is TradeMatcher, SettleLayer {
     function claimCmd (bytes32 pool, CurveMath.CurveState memory curve,
                        KnockoutLiq.KnockoutPosLoc memory loc,
                        bytes memory args) private returns
-        (int128 baseFlow, int128 quoteFlow) {
+        (int128 baseFlow, int128 quoteFlow, uint128 reward) {
         (uint160 root, uint256[] memory proof) = abi.decode(args, (uint160,uint256[]));
 
         // No permit check because permit oracles do not control knockout claims
         // (See ICrocPermitOracle for more information)
-        (baseFlow, quoteFlow) = claimKnockout(curve, loc, root, proof, pool);
+        (baseFlow, quoteFlow, reward) = claimKnockout(curve, loc, root, proof, pool);
         commitCurve(pool, curve);
     }
     

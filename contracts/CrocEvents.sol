@@ -80,6 +80,7 @@ library CrocEvents {
      * @param quote The address of the quote token involved.
      * @param poolIdx The template of the relevant pool.
      * @param qty The amount of base (quote) tokens being added to the pool if isBid is (not) true
+     * @param isBid Indicates the direction of the knockout position, if isBid then knockout is at lowerTick, else upperTick
      * @param lowerTick The lower price tick of the range position.
      * @param upperTick The upper price tick of the range position.
      */
@@ -106,9 +107,9 @@ library CrocEvents {
      * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      * @param lowerTick The lower price tick of the range position.
      * @param upperTick The upper price tick of the range position.
-     * @param proven Indicates a correct proof was provided and earned fees were collected.
+     * @param rewardFees Indicates the amount of the baseFlow/quoteFlow paid to the user which were accrued fees claimed by proving the knockout.
      */
-    event WithdrawKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, int24 lowerTick, int24 upperTick, bool proven);
+    event WithdrawKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, int24 lowerTick, int24 upperTick, uint128 rewardFees);
 
     /* @notice Emitted when governance authority for CrocSwapDex is transfered.
      * @param The authority being transfered to. */

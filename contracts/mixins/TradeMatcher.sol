@@ -271,15 +271,17 @@ contract TradeMatcher is PositionRegistrar, LiquidityCurve, KnockoutCounter,
      *              hash of the knockout slot
      * @param poolHash The hash of the pool the curve applies to
      *
-     * @return The incrmental base and quote debit flows from this action. */
+     * @return The incrmental base and quote debit flows from this action, and the portion of
+               the payout which comes from fee rewards. */
     function claimKnockout (CurveMath.CurveState memory curve, 
                             KnockoutLiq.KnockoutPosLoc memory loc,
                             uint160 root, uint256[] memory proof, bytes32 poolHash)
-        internal returns (int128 baseFlow, int128 quoteFlow) {
+        internal returns (int128 baseFlow, int128 quoteFlow, uint128 reward) {
         (uint96 lots, uint64 rewards) = claimPostKnockout(poolHash, loc, root, proof);
         uint128 liquidity = lots.lotsToLiquidity();
         
-        (uint128 base, uint128 quote) = liquidityHeldPayable
+        (uint128 base, uint128 quote) = (0, 0);
+        (base, quote, reward) = liquidityHeldPayable
             (curve, liquidity, rewards, loc);
         (baseFlow, quoteFlow) = signBurnFlow(base, quote);
     }
