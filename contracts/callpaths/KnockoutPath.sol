@@ -98,8 +98,9 @@ contract KnockoutLiqPath is TradeMatcher, SettleLayer {
             (uint128 qty,) = abi.decode(args, (uint128,bool));
             emit CrocEvents.MintKnockout(lockHolder_, base, quote, poolIdx, qty, loc.isBid_, loc.lowerTick_, loc.upperTick_);
         } else if (code == UserCmd.BURN_KNOCKOUT) {
-            (baseFlow, quoteFlow) = burnCmd(base, quote, pool, curve, loc, args);
-            emit CrocEvents.BurnKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_);
+            uint128 rewardFees = 0;
+            (baseFlow, quoteFlow, rewardFees) = burnCmd(base, quote, pool, curve, loc, args);
+            emit CrocEvents.BurnKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_, rewardFees);
         } else if (code == UserCmd.CLAIM_KNOCKOUT) {
             uint128 rewardFees = 0;
             (baseFlow, quoteFlow, rewardFees) = claimCmd(pool.hash_, curve, loc, args);
@@ -141,7 +142,7 @@ contract KnockoutLiqPath is TradeMatcher, SettleLayer {
                       CurveMath.CurveState memory curve,
                       KnockoutLiq.KnockoutPosLoc memory loc,
                       bytes memory args) private returns
-        (int128 baseFlow, int128 quoteFlow) {
+        (int128 baseFlow, int128 quoteFlow, uint128 reward) {
         (uint128 qty, bool inLiqQty, bool insideMid) =
             abi.decode(args, (uint128,bool,bool));
 
@@ -153,7 +154,7 @@ contract KnockoutLiqPath is TradeMatcher, SettleLayer {
                                  loc.lowerTick_, loc.upperTick_, loc.isBid_);        
         verifyPermitBurn(pool, base, quote, loc.lowerTick_, loc.upperTick_, liq);
 
-        (baseFlow, quoteFlow) = burnKnockout(curve, priceTick, loc, liq, pool.hash_);
+        (baseFlow, quoteFlow, reward) = burnKnockout(curve, priceTick, loc, liq, pool.hash_);
         commitCurve(pool.hash_, curve);
     }
 

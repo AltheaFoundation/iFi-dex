@@ -119,12 +119,12 @@ contract LiquidityCurve is StorageLayout {
      * @param curve The liquidity curve object that concentrated liquidity will be 
      *              removed from.
      * @param liquidity The amount of liquidity being removed, whether in-range or not.
-     *                  Represented in the form of sqrt(X*Y) where x,Y are the virtual
+     *                  Represented in the form of sqrt(X*Y) where X,Y are the virtual
      *                  reserves of a constant product AMM.
-     * @param rewardRate The total cumulative earned but unclaimed rewards on the staked
-     *                   liquidity. Used to increment the payout with the rewards, and
-     *                   burn the ambient liquidity tied to the rewards. (See 
-     *                   CurveMath.sol for more.) Represented as a 128-bit fixed point
+     * @param rewardRate Indicates the total cumulative earned but unclaimed rewards on
+     *                   the staked liquidity. Used to increment the payout with the
+     *                   rewards, and burn the ambient liquidity tied to the rewards.  
+     *                   (See CurveMath.sol for more) Represented as a 128-bit fixed point
      *                   cumulative growth rate of ambient seeds per unit of liquidity.
      * @param lowerTick The tick index corresponding to the bottom of the concentrated 
      *                  liquidity range.
@@ -136,14 +136,41 @@ contract LiquidityCurve is StorageLayout {
      *                collateral stability.
      * @return quote - The amount of base token collateral that can be paid out following
      *                the removal of the liquidity. Always rounded down to favor 
-     *                collateral stability. */
+     *                collateral stability.
+     * @return reward - The amount of ambient liquidity (as sqrt(X*Y)) removed from the pool
+     *                  to pay out the accumulated rewards from fees. */
     function liquidityPayable (CurveMath.CurveState memory curve, uint128 liquidity,
                                uint64 rewardRate, int24 lowerTick, int24 upperTick)
-        internal pure returns (uint128 base, uint128 quote) {
+        internal pure returns (uint128 base, uint128 quote, uint128 reward) {
         (base, quote) = liquidityPayable(curve, liquidity, lowerTick, upperTick);
-        (base, quote,) = stackRewards(base, quote, curve, liquidity, rewardRate);
+        (base, quote, reward) = stackRewards(base, quote, curve, liquidity, rewardRate);
    }
-
+    /* @notice Calculates the amount of collateral to be paid out to the user due to fees
+     *         and the ambient liquidity to remove from the pool.
+     *
+     * @param base - The principal amount of base token collateral of the position which
+     *               will be returned to the user.
+     * @param quote - The principal amount of quote token collateral of the position which
+     *               will be returned to the user.
+     * @param curve The liquidity curve object that concentrated liquidity will be 
+     *              removed from.
+     * @param liquidity The amount of liquidity being removed, whether in-range or not.
+     *                  Represented in the form of sqrt(X*Y) where X,Y are the virtual
+     *                  reserves of a constant product AMM.
+     * @param rewardRate Indicates the total cumulative earned but unclaimed rewards on the
+     *                   staked liquidity. Used to increment the payout with the rewards, and
+     *                   burn the ambient liquidity tied to the rewards. (See 
+     *                   CurveMath.sol for more.) Represented as a 128-bit fixed point
+     *                   cumulative growth rate of ambient seeds per unit of liquidity.
+     *
+     * @return base - The amount of base token collateral that can be paid out following
+     *                the removal of the liquidity. Always rounded down to favor 
+     *                collateral stability.
+     * @return quote - The amount of base token collateral that can be paid out following
+     *                the removal of the liquidity. Always rounded down to favor 
+     *                collateral stability.
+     * @return reward - The amount of ambient liquidity (as sqrt(X*Y)) removed from the pool
+     *                  to pay out the accumulated rewards from fees. */
     function stackRewards (uint128 base, uint128 quote,
                            CurveMath.CurveState memory curve,
                            uint128 liquidity, uint64 rewardRate)

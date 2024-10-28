@@ -158,11 +158,13 @@ contract TradeMatcher is PositionRegistrar, LiquidityCurve, KnockoutCounter,
      *                  operations. Will always be negative indicating, a credit from
      *                  the pool to the user.
      * @return quoteFlow The amount of quote-side token collateral returned by this
-     *                   operation. */
+     *                   operation.
+     * @return reward The amount of ambient liquidity removed from the pool due to
+     *                fees earned by this position. */
     function burnRange (CurveMath.CurveState memory curve, int24 priceTick,
                         int24 lowTick, int24 highTick, uint128 liquidity,
                         bytes32 poolHash, address lpOwner)
-        internal returns (int128, int128) {
+        internal returns (int128, int128, uint128) {
         uint64 feeMileage = removeBookLiq(poolHash, priceTick, lowTick, highTick,
                                           liquidity.liquidityToLots(),
                                           curve.concGrowth_);
@@ -170,9 +172,10 @@ contract TradeMatcher is PositionRegistrar, LiquidityCurve, KnockoutCounter,
                                     feeMileage);
         withdrawConduit(poolHash, lowTick, highTick,
                         liquidity, feeMileage, lpOwner);
-        (uint128 base, uint128 quote) = liquidityPayable(curve, liquidity, rewards,
+        (uint128 base, uint128 quote, uint128 reward) = liquidityPayable(curve, liquidity, rewards,
                                                          lowTick, highTick);
-        return signBurnFlow(base, quote);
+        (int128 baseFlow, int128 quoteFlow) = signBurnFlow(base, quote);
+        return (baseFlow, quoteFlow, reward);
     }
 
     /* @notice Dispatches the call to the ICrocLpConduit with the ambient liquidity 
@@ -252,11 +255,12 @@ contract TradeMatcher is PositionRegistrar, LiquidityCurve, KnockoutCounter,
     function burnKnockout (CurveMath.CurveState memory curve, int24 priceTick,
                            KnockoutLiq.KnockoutPosLoc memory loc,
                            uint128 liquidity, bytes32 poolHash)
-        internal returns (int128 baseFlow, int128 quoteFlow) {
+        internal returns (int128 baseFlow, int128 quoteFlow, uint128 reward) {
         (, , uint64 rewards) = rmKnockoutLiq(poolHash, priceTick, curve.concGrowth_,
                                              loc, liquidity.liquidityToLots());
         
-        (uint128 base, uint128 quote) = liquidityPayable
+        (uint128 base, uint128 quote) = (0, 0);
+        (base, quote, reward) = liquidityPayable
             (curve, liquidity, rewards, loc.lowerTick_, loc.upperTick_);
         (baseFlow, quoteFlow) = signBurnFlow(base, quote);
     }

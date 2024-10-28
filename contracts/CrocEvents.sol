@@ -95,8 +95,9 @@ library CrocEvents {
      * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      * @param lowerTick The lower price tick of the range position.
      * @param upperTick The upper price tick of the range position.
+     * @param rewardFees The amount of ambient liquidity (as sqrt(X*Y)) removed from the pool due to payout of accrued fees.
      */
-    event BurnKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, int24 lowerTick, int24 upperTick);
+    event BurnKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, int24 lowerTick, int24 upperTick, uint128 rewardFees);
 
     /* @notice Emitted when a complete knockout liquidity position is claimed or recovered, deleting the position from the pool.
      * @param user The address of the position holder.
@@ -107,7 +108,7 @@ library CrocEvents {
      * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      * @param lowerTick The lower price tick of the range position.
      * @param upperTick The upper price tick of the range position.
-     * @param rewardFees Indicates the amount of the baseFlow/quoteFlow paid to the user which were accrued fees claimed by proving the knockout.
+     * @param rewardFees The amount of ambient liquidity (as sqrt(X*Y)) removed from the pool due to payout of accrued fees.
      */
     event WithdrawKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, int24 lowerTick, int24 upperTick, uint128 rewardFees);
 
