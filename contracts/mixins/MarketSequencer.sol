@@ -144,7 +144,7 @@ contract MarketSequencer is TradeMatcher {
         internal returns (int128 baseFlow, int128 quoteFlow) {
         CurveMath.CurveState memory curve = snapCurveInRange
             (pool.hash_, minPrice, maxPrice);
-        (baseFlow, quoteFlow) =
+        (baseFlow, quoteFlow,) =
             burnRange(curve, curve.priceRoot_.getTickAtSqrtRatio(),
                       bidTick, askTick, liq, pool.hash_, lpConduit);
         commitCurve(pool.hash_, curve);

@@ -57,7 +57,7 @@ contract MicroPaths is MarketSequencer {
         curve.seedDeflator_ = seedGrowth;
         curve.concGrowth_ = concGrowth;
         
-        (baseFlow, quoteFlow) = burnRange(curve, priceTick, lowTick, highTick,
+        (baseFlow, quoteFlow,) = burnRange(curve, priceTick, lowTick, highTick,
                                           liq, poolHash, lockHolder_);
 
         concOut = curve.concLiq_;

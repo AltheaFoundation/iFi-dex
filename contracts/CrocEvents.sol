@@ -79,12 +79,13 @@ library CrocEvents {
      * @param base The address of the base token involved.
      * @param quote The address of the quote token involved.
      * @param poolIdx The template of the relevant pool.
-     * @param qty The amount of base (quote) tokens being added to the pool if isBid is (not) true
+     * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      * @param isBid Indicates the direction of the knockout position, if isBid then knockout is at lowerTick, else upperTick
      * @param lowerTick The lower price tick of the range position.
      * @param upperTick The upper price tick of the range position.
      */
-    event MintKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 qty, bool isBid, int24 lowerTick, int24 upperTick);
+    event MintKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, bool isBid, int24 lowerTick, int24 upperTick);
 
     /* @notice Emitted when a knockout liquidity position is burned, removing an in-progress knockout position from the pool.
      * @param user The address of the position holder.

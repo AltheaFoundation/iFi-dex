@@ -95,8 +95,7 @@ contract KnockoutLiqPath is TradeMatcher, SettleLayer {
         private returns (int128 baseFlow, int128 quoteFlow) {        
         if (code == UserCmd.MINT_KNOCKOUT) {
             (baseFlow, quoteFlow) = mintCmd(base, quote, pool, curve, loc, args);
-            (uint128 qty,) = abi.decode(args, (uint128,bool));
-            emit CrocEvents.MintKnockout(lockHolder_, base, quote, poolIdx, qty, loc.isBid_, loc.lowerTick_, loc.upperTick_);
+            emit CrocEvents.MintKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.isBid_, loc.lowerTick_, loc.upperTick_);
         } else if (code == UserCmd.BURN_KNOCKOUT) {
             uint128 rewardFees = 0;
             (baseFlow, quoteFlow, rewardFees) = burnCmd(base, quote, pool, curve, loc, args);

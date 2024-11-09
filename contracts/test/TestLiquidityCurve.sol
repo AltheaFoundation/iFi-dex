@@ -56,7 +56,7 @@ contract TestLiquidityCurve is LiquidityCurve {
                                int24 lower, int24 upper)
         internal returns (uint128 base, uint128 flow) {
         CurveMath.CurveState memory curve = snapCurve(poolIdx);
-        (base, flow) = liquidityPayable(curve, liq, rewards, lower, upper);
+        (base, flow,) = liquidityPayable(curve, liq, rewards, lower, upper);
         commitCurve(poolIdx, curve);
     }
 
