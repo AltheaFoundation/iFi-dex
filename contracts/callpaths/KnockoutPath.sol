@@ -99,14 +99,14 @@ contract KnockoutLiqPath is TradeMatcher, SettleLayer {
         } else if (code == UserCmd.BURN_KNOCKOUT) {
             uint128 rewardFees = 0;
             (baseFlow, quoteFlow, rewardFees) = burnCmd(base, quote, pool, curve, loc, args);
-            emit CrocEvents.BurnKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_, rewardFees);
+            emit CrocEvents.BurnKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.isBid_, loc.lowerTick_, loc.upperTick_, rewardFees);
         } else if (code == UserCmd.CLAIM_KNOCKOUT) {
             uint128 rewardFees = 0;
             (baseFlow, quoteFlow, rewardFees) = claimCmd(pool.hash_, curve, loc, args);
-            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_, rewardFees);
+            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.isBid_, loc.lowerTick_, loc.upperTick_, rewardFees);
         } else if (code == UserCmd.RECOVER_KNOCKOUT) {
             (baseFlow, quoteFlow) = recoverCmd(pool.hash_, loc, args);
-            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.lowerTick_, loc.upperTick_, 0);
+            emit CrocEvents.WithdrawKnockout(lockHolder_, base, quote, poolIdx, baseFlow, quoteFlow, loc.isBid_, loc.lowerTick_, loc.upperTick_, 0);
         } else {
             revert("Invalid command");
         }

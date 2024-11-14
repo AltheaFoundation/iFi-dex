@@ -94,11 +94,12 @@ library CrocEvents {
      * @param poolIdx The template of the relevant pool.
      * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param isBid Indicates the direction of the knockout position, if isBid then knockout is at lowerTick, else upperTick
      * @param lowerTick The lower price tick of the range position.
      * @param upperTick The upper price tick of the range position.
      * @param rewardFees The amount of ambient liquidity (as sqrt(X*Y)) removed from the pool due to payout of accrued fees.
      */
-    event BurnKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, int24 lowerTick, int24 upperTick, uint128 rewardFees);
+    event BurnKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, bool isBid, int24 lowerTick, int24 upperTick, uint128 rewardFees);
 
     /* @notice Emitted when a complete knockout liquidity position is claimed or recovered, deleting the position from the pool.
      * @param user The address of the position holder.
@@ -107,11 +108,12 @@ library CrocEvents {
      * @param poolIdx The template of the relevant pool.
      * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param isBid Indicates the direction of the knockout position, if isBid then knockout is at lowerTick, else upperTick
      * @param lowerTick The lower price tick of the range position.
      * @param upperTick The upper price tick of the range position.
      * @param rewardFees The amount of ambient liquidity (as sqrt(X*Y)) removed from the pool due to payout of accrued fees.
      */
-    event WithdrawKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, int24 lowerTick, int24 upperTick, uint128 rewardFees);
+    event WithdrawKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, bool isBid, int24 lowerTick, int24 upperTick, uint128 rewardFees);
 
     /* @notice Emitted when governance authority for CrocSwapDex is transfered.
      * @param The authority being transfered to. */
