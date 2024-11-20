@@ -40,6 +40,7 @@ contract CrocSwapDex is HotPath, ICrocMinion {
         authority_ = msg.sender;
         hotPathOpen_ = true;
         proxyPaths_[CrocSlots.BOOT_PROXY_IDX] = address(new BootPath());
+        emit CrocEvents.Deployed();
     }
 
     /* @notice Swaps between two tokens within a single liquidity pool.

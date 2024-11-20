@@ -4,6 +4,8 @@ pragma solidity 0.8.19;
 
 library CrocEvents {
 
+    event Deployed();
+
     /* @notice Emitted whenever a swap is performed, exchanging buy tokens for sell tokens.
      * @param user The address of the user performing the swap.
      * @param buy The address of the token being bought.
