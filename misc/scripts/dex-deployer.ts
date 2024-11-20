@@ -320,19 +320,57 @@ async function deploy() {
   let setPoolLiqCmd = abiCoder.encode(["uint8", "uint128"], [112, 1]);
   tx = await dex.protocolCmd(3, setPoolLiqCmd, true);
   await tx.wait();
+
+  /* Setting the knockout bits is a bit complicated, from the KnockoutLiq comments:
+      The fields are set in the following order from most to least significant bit:
+              [8]             [7]            [6][5]          [4][3][2][1]
+             Unusued      On-Grid Flag      PlaceType         OrderWidth
+                 
+      The field types are as follows:
+        OrderWidth - The width of new knockout pivots in ticks represented by
+                      power of two. 
+        PlaceType - Restricts where new knockout pivots can be placed 
+                    relative to curve price. Uses the following codes:
+              0 - Disabled. No knockout pivots allowed.
+              1 - Knockout bids (asks) must be placed with upper (lower) tick
+                  below (above) the current curve price.
+              2 - Knockout bids (asks) must be placed with lower (upper) tick
+                  below (above) the current curve price.
+
+        On-Grid Flag - If set requires that any new knockout range order can only
+                      be placed on a tick index that's a multiple of the width. 
+                      Can be used to restrict density of knockout orders, beyond 
+                      the normal pool tick size.
+  */
+  let onGridBits = 1 << 7;
+  let stablePairWidthBits = 6; // 2^6 = 64 ticks, 1.0001^64 => ~64 basis points of price movement (or 0.6 cents)
+  let volatilePairWidthBits = 10; // 2^10 = 1024 ticks, 1.0001^1024 => ~1078 basis points of price movement (or 10%)
+  let inRangeKnockoutPlaceType = 2;
+  let outOfRangeKnockoutPlaceType = 1;
+  let inRangePlaceBits = inRangeKnockoutPlaceType << 4;
+  let outOfRangePlaceBits = outOfRangeKnockoutPlaceType << 4;
+  
+  // Allow pools on the stable pair template to have any knockout position with width of 64 bits
+  let stablePairBits = stablePairWidthBits | inRangePlaceBits | outOfRangePlaceBits;
+  // Allow pools on the volatile pair template to have any knockout position with width of 1024 bits
+  let volatilePairBits = volatilePairWidthBits | inRangePlaceBits | outOfRangePlaceBits;
   console.log("Setting default pool templates (index 36000, 36001)");
+  // Set the stable pairs to use index 36000, have a fee of 0.25%, tick size of 1, 10 second jit time, stable pair bits, and no oracle
   let templateCmd = abiCoder.encode(
     ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
-    [110, 36000, 100, 1, 8, 32 + 6, 0]
+    [110, 36000, 25, 1, 1, stablePairBits, 0]
   );
   tx = await dex.protocolCmd(3, templateCmd, false);
   await tx.wait();
+  // Set the volatile pairs to use index 36001, have a fee of 1%, tick size of 4, 10 second jit time, stable pair bits, and no oracle
   templateCmd = abiCoder.encode(
     ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
-    [110, 36001, 100, 1, 8, 32 + 6, 0]
+    [110, 36001, 100, 4, 1, volatilePairBits, 0]
   );
   tx = await dex.protocolCmd(3, templateCmd, false);
   await tx.wait();
+  // On blast the template 420 (used widely) is schema 1, fee rate 1500, protocol take 0, tick size 4, jit thresh 1, knockout bits 34, oracle flags 0
+  // The schema will be 1 unless the dex has been upgraded and needed new pool schema values
 }
 
 function getContractArtifacts(path: string): { bytecode: string; abi: string } {
