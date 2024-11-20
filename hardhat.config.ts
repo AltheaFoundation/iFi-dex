@@ -61,7 +61,7 @@ const config: HardhatUserConfig = {
   networks: {
     local: {
       url: "http://localhost:8545",
-      chainId: 417834,
+      chainId: 6633438,
       accounts: [
         "0x3b23c86080c9abc8870936b2eb17ecb808f5ad3b318018b3e23873013379e4d6",
         "0xa9c7120f7a13a0bb0b0c513e6145bc1e4c55a126a055da53c5e7612d25aca8c7",
