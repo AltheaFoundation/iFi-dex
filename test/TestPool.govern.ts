@@ -44,8 +44,8 @@ describe('Pool Governance', () => {
       accts = (await (ethers.getSigners() as Promise<Signer[]>)) as unknown as Wallet[]
 
       let factory = await ethers.getContractFactory("CrocPolicy");
-      policy = (await factory.deploy((await test.dex).address)) as CrocPolicy;
-      policy2 = (await factory.deploy((await test.dex).address)) as CrocPolicy;
+      policy = (await factory.deploy((await test.dex).address, sender)) as CrocPolicy;
+      policy2 = (await factory.deploy((await test.dex).address, sender)) as CrocPolicy;
       pool = await test.dex
 
       factory = await ethers.getContractFactory("MockTimelock");

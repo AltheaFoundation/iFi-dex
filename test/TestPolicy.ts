@@ -27,7 +27,7 @@ describe('CrocPolicy', () => {
       minion = (await factory.deploy()) as MockMinion;
 
       factory = await ethers.getContractFactory("CrocPolicy");
-      policy = (await factory.deploy(minion.address)) as CrocPolicy;
+      policy = (await factory.deploy(minion.address, ethers.constants.AddressZero)) as CrocPolicy;
 
       factory = await ethers.getContractFactory("MockTimelock");
       treasury = (await factory.deploy(policy.address)) as MockTimelock;
