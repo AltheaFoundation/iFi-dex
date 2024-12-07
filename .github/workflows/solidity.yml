@@ -1,0 +1,28 @@
+name: Solidity build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install packages
+        run: yarn
+      - name: Compile contracts
+        run: npx hardhat compile
+  test:
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install packages
+        run: yarn
+      - name: Compile contracts
+        run: npx hardhat compile
+      - name: Run tests
+        run: npx hardhat test
