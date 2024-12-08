@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3
 
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 import "../CrocSwapDex.sol";
 
 /* @notice Stateless read only contract that calculates the price impact of a hypothetical
