@@ -48,7 +48,7 @@ contract MicroPaths is MarketSequencer {
     function burnRange (uint128 price, int24 priceTick, uint128 seed, uint128 conc,
                         uint64 seedGrowth, uint64 concGrowth,
                         int24 lowTick, int24 highTick, uint128 liq, bytes32 poolHash)
-        public payable returns (int128 baseFlow, int128 quoteFlow,
+        public payable returns (int128 baseFlow, int128 quoteFlow, uint128 rewards,
                         uint128 seedOut, uint128 concOut) {
         CurveMath.CurveState memory curve;
         curve.priceRoot_ = price;
@@ -57,7 +57,7 @@ contract MicroPaths is MarketSequencer {
         curve.seedDeflator_ = seedGrowth;
         curve.concGrowth_ = concGrowth;
         
-        (baseFlow, quoteFlow,) = burnRange(curve, priceTick, lowTick, highTick,
+        (baseFlow, quoteFlow, rewards) = burnRange(curve, priceTick, lowTick, highTick,
                                           liq, poolHash, lockHolder_);
 
         concOut = curve.concLiq_;

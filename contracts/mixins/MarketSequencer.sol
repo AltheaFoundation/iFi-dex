@@ -137,14 +137,15 @@ contract MarketSequencer is TradeMatcher {
      *                  from the pool as part of the burn. Will always be
      *                  negative as it's paid from the pool to the user.
      * @return quoteFlow The total amount of quote-side token collateral that is returned
-     *                   from the pool as part of the burn. */
+     *                   from the pool as part of the burn. 
+     * @return reward The amount of ambient liquidity (as sqrt(X*Y)) removed from the pool due to payout of accrued fees. */
     function burnOverPool (int24 bidTick, int24 askTick, uint128 liq,
                            PoolSpecs.PoolCursor memory pool,
                            uint128 minPrice, uint128 maxPrice, address lpConduit)
-        internal returns (int128 baseFlow, int128 quoteFlow) {
+        internal returns (int128 baseFlow, int128 quoteFlow, uint128 reward) {
         CurveMath.CurveState memory curve = snapCurveInRange
             (pool.hash_, minPrice, maxPrice);
-        (baseFlow, quoteFlow,) =
+        (baseFlow, quoteFlow, reward) =
             burnRange(curve, curve.priceRoot_.getTickAtSqrtRatio(),
                       bidTick, askTick, liq, pool.hash_, lpConduit);
         commitCurve(pool.hash_, curve);
@@ -163,17 +164,18 @@ contract MarketSequencer is TradeMatcher {
      *                 price falls outside this point, the transaction is reverted.
      *
      * @return baseFlow The total amount of base-side token collateral that is returned
-     *                  from the pool as part of the burn. Will always be
+     *                  from the pool as part of the harvest. Will always be
      *                  negative as it's paid from the pool to the user.
      * @return quoteFlow The total amount of quote-side token collateral that is returned
-     *                   from the pool as part of the burn. */
+     *                   from the pool as part of the harvest.
+     * @return reward The amount of ambient liquidity (as sqrt(X*Y)) removed from the pool due to payout of accrued fees. */
     function harvestOverPool (int24 bidTick, int24 askTick,
                               PoolSpecs.PoolCursor memory pool,
                               uint128 minPrice, uint128 maxPrice, address lpConduit)
-        internal returns (int128 baseFlow, int128 quoteFlow) {
+        internal returns (int128 baseFlow, int128 quoteFlow, uint128 reward) {
         CurveMath.CurveState memory curve = snapCurveInRange
             (pool.hash_, minPrice, maxPrice);
-        (baseFlow, quoteFlow) =
+        (baseFlow, quoteFlow, reward) =
             harvestRange(curve, curve.priceRoot_.getTickAtSqrtRatio(),
                          bidTick, askTick, pool.hash_, lpConduit);
         commitCurve(pool.hash_, curve);
@@ -394,10 +396,10 @@ contract MarketSequencer is TradeMatcher {
                                        poolIdx, bend.liquidity_, bend.lowTick_, bend.highTick_, baseFlow, quoteFlow);
             return (baseFlow, quoteFlow);
         } else {
-            (int128 baseFlow, int128 quoteFlow) = callBurnRange(curve, bend.lowTick_, bend.highTick_,
+            (int128 baseFlow, int128 quoteFlow, uint128 rewards) = callBurnRange(curve, bend.lowTick_, bend.highTick_,
                           bend.liquidity_, cntx.pool_.hash_);
             emit CrocEvents.BurnRanged(lockHolder_, pairs.baseToken_, pairs.quoteToken_,
-                                       poolIdx, bend.liquidity_, bend.lowTick_, bend.highTick_, baseFlow, quoteFlow);
+                                       poolIdx, bend.liquidity_, bend.lowTick_, bend.highTick_, baseFlow, quoteFlow, rewards);
             return (baseFlow, quoteFlow);
         }
     }

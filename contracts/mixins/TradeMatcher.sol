@@ -323,18 +323,21 @@ contract TradeMatcher is PositionRegistrar, LiquidityCurve, KnockoutCounter,
      *                  operations. Will always be negative indicating, a credit from
      *                  the pool to the user.
      * @return quoteFlow The amount of quote-side token collateral returned by this
-     *                   operation. */
+     *                   operation.
+     * @return rewards The amount of ambient liquidity (as sqrt(X*Y)) removed due withdrawal
+     *                of accrued fees */
     function harvestRange (CurveMath.CurveState memory curve, int24 priceTick,
                            int24 lowTick, int24 highTick, bytes32 poolHash,
                            address lpOwner)
-        internal returns (int128, int128) {
+        internal returns (int128, int128, uint128) {
         uint64 feeMileage = clockFeeOdometer(poolHash, priceTick, lowTick, highTick,
                                              curve.concGrowth_);
         uint128 rewards = harvestPosLiq(lpOwner, poolHash,
                                         lowTick, highTick, feeMileage);
         withdrawConduit(poolHash, lowTick, highTick, 0, feeMileage, lpOwner);
         (uint128 base, uint128 quote) = liquidityPayable(curve, rewards);
-        return signBurnFlow(base, quote);
+        (int128 baseFlow, int128 quoteFlow) = signBurnFlow(base, quote);
+        return (baseFlow, quoteFlow, rewards);
     }
     
     /* @notice Converts the unsigned flow associated with a mint operation to a pair

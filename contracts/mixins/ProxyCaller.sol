@@ -136,7 +136,7 @@ contract ProxyCaller is StorageLayout {
     function callBurnRange (CurveCache.Cache memory curve,
                             int24 bidTick, int24 askTick, uint128 liq,
                             bytes32 poolHash) internal
-        returns (int128 basePaid, int128 quotePaid) {
+        returns (int128 basePaid, int128 quotePaid, uint128 rewards) {
         
         (bool success, bytes memory output) =
             proxyPaths_[CrocSlots.MICRO_PROXY_IDX].delegatecall
@@ -148,10 +148,10 @@ contract ProxyCaller is StorageLayout {
               bidTick, askTick, liq, poolHash));
         require(success);
         
-        (basePaid, quotePaid,
+        (basePaid, quotePaid, rewards,
          curve.curve_.ambientSeeds_,
          curve.curve_.concLiq_) = 
-            abi.decode(output, (int128, int128, uint128, uint128));
+            abi.decode(output, (int128, int128, uint128, uint128, uint128));
     }
 
     /* @notice Invokes sweepSwap() call in MicroPaths sidecar and relays the result. */

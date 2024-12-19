@@ -39,8 +39,9 @@ library CrocEvents {
      * @param askTick The upper price tick of the range position.
      * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param rewardFees The amount of ambient liquidity (as sqrt(X*Y)) removed from the pool due to payout of accrued fees.
      */
-    event BurnRanged(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, int24 bidTick, int24 askTick, int128 baseFlow, int128 quoteFlow);
+    event BurnRanged(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, uint128 liq, int24 bidTick, int24 askTick, int128 baseFlow, int128 quoteFlow, uint128 rewardFees);
 
     /* @notice Emitted when a concentrated position's ambient rewards are harvested, removing ambient liquidity from the pool.
      * @param user The address of the user performing the harvest.
@@ -51,8 +52,9 @@ library CrocEvents {
      * @param askTick The upper price tick of the range position.
      * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
      * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param rewardFees The amount of ambient liquidity (as sqrt(X*Y)) removed from the pool due to payout of accrued fees.
      */
-    event Harvest(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int24 bidTick, int24 askTick, int128 baseFlow, int128 quoteFlow);
+    event Harvest(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int24 bidTick, int24 askTick, int128 baseFlow, int128 quoteFlow, uint128 rewardFees);
 
     /* @notice Emitted when an ambient (full range) liquidity position is created, or additional liquidity is added to an existing position.
      * @param user The address of the user performing the mint.

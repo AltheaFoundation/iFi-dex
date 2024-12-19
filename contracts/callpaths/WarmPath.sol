@@ -162,9 +162,9 @@ contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
         PoolSpecs.PoolCursor memory pool = queryPool(base, quote, poolIdx);
         verifyPermitBurn(pool, base, quote, bidTick, askTick, liq);
         
-        (int128 baseFlow, int128 quoteFlow) = burnOverPool(bidTick, askTick, liq, pool, limitLower, limitHigher,
+        (int128 baseFlow, int128 quoteFlow, uint128 rewards) = burnOverPool(bidTick, askTick, liq, pool, limitLower, limitHigher,
                             lpConduit);
-        emit CrocEvents.BurnRanged(lockHolder_, base, quote, poolIdx, liq, bidTick, askTick, baseFlow, quoteFlow);
+        emit CrocEvents.BurnRanged(lockHolder_, base, quote, poolIdx, liq, bidTick, askTick, baseFlow, quoteFlow, rewards);
         return (baseFlow, quoteFlow);
     }
 
@@ -192,9 +192,9 @@ contract WarmPath is MarketSequencer, SettleLayer, ProtocolAccount {
         // be returned, so oracles should handle 0 as special case if that's an issue. 
         verifyPermitBurn(pool, base, quote, bidTick, askTick, 0);
         
-        (int128 baseFlow, int128 quoteFlow) = harvestOverPool(bidTick, askTick, pool, limitLower, limitHigher,
+        (int128 baseFlow, int128 quoteFlow, uint128 rewards) = harvestOverPool(bidTick, askTick, pool, limitLower, limitHigher,
                                lpConduit);
-        emit CrocEvents.Harvest(lockHolder_, base, quote, poolIdx, bidTick, askTick, baseFlow, quoteFlow);
+        emit CrocEvents.Harvest(lockHolder_, base, quote, poolIdx, bidTick, askTick, baseFlow, quoteFlow, rewards);
         return (baseFlow, quoteFlow);
     }
 
