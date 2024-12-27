@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 pragma experimental ABIEncoderV2;
 
+import '../CrocEvents.sol';
 import './StorageLayout.sol';
 import './SettleLayer.sol';
 import '../interfaces/IERC20Minimal.sol';
@@ -31,6 +32,8 @@ contract DepositDesk is SettleLayer {
         debitTransfer(lockHolder_, value, token, popMsgVal());
         bytes32 key = tokenKey(recv, token);
         userBals_[key].surplusCollateral_ += value;
+
+        emit CrocEvents.Surplus(lockHolder_, recv, token, int128(value), 0, userBals_[key].surplusCollateral_);
     }
 
     /* @notice Same as deposit surplus, but used with EIP-2612 compliant tokens that have
@@ -48,6 +51,8 @@ contract DepositDesk is SettleLayer {
         internal {
         IERC20Permit(token).permit(recv, address(this), value, deadline, v, r, s);
         depositSurplus(recv, value, token);
+
+        emit CrocEvents.Surplus(lockHolder_, recv, token, int128(value), 0, userBals_[tokenKey(recv, token)].surplusCollateral_);
     }
 
     /* @notice Pays out surplus collateral held by the owner at the exchange.
@@ -73,6 +78,8 @@ contract DepositDesk is SettleLayer {
         // we'd expect it to be set on this call.
         userBals_[key].surplusCollateral_ -= value;
         creditTransfer(recv, value, token, 0);
+
+        emit CrocEvents.Surplus(lockHolder_, recv, token, -int128(value), userBals_[key].surplusCollateral_, 0);
     }
 
     /* @notice Transfers surplus collateral from one user to another.
@@ -87,6 +94,9 @@ contract DepositDesk is SettleLayer {
         bytes32 fromKey = tokenKey(lockHolder_, token);
         bytes32 toKey = tokenKey(to, token);
         moveSurplus(fromKey, toKey, size);
+
+        uint128 value = applyTransactVal(size, userBals_[fromKey].surplusCollateral_);
+        emit CrocEvents.Surplus(lockHolder_, to, token, -int128(value), userBals_[fromKey].surplusCollateral_, userBals_[toKey].surplusCollateral_);
     }
 
     /* @notice Moves an existing surplus collateral balance to a "side-pocket" , or a 
@@ -113,6 +123,9 @@ contract DepositDesk is SettleLayer {
         bytes32 fromKey = tokenKey(from, token);
         bytes32 toKey = tokenKey(to, token);
         moveSurplus(fromKey, toKey, size);
+
+        uint128 value = applyTransactVal(size, userBals_[fromKey].surplusCollateral_);
+        emit CrocEvents.Surplus(lockHolder_, to, token, -int128(value), userBals_[fromKey].surplusCollateral_, userBals_[toKey].surplusCollateral_);
     }
 
     /* @notice Lower level function to move surplus collateral from one fully salted 

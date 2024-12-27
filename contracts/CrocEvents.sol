@@ -119,6 +119,16 @@ library CrocEvents {
      */
     event WithdrawKnockout(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, int128 baseFlow, int128 quoteFlow, bool isBid, int24 lowerTick, int24 upperTick, uint128 rewardFees);
 
+    /* @notice Emitted when a user's surplus collateral is changed by deposit, withdrawal, or transfer (including side-pocket transfers).
+     * @param from The address of the user sending the surplus collateral.
+     * @param to The address of the user receiving the surplus collateral (for most deposits this will be the same as from).
+     * @param token The address of the token the surplus collateral is sent for.
+     * @param delta The amount of surplus collateral being transferred.
+     * @param fromSurplus The resultant surplus collateral of the sender (0 for deposits, see toSurplus).
+     * @param toSurplus The resultant surplus collateral of the receiver (0 for disbursements, see fromSurplus).
+     */
+    event Surplus(address indexed from, address indexed to, address indexed token, int128 delta, uint128 fromSurplus, uint128 toSurplus);
+
     /* @notice Emitted when governance authority for CrocSwapDex is transfered.
      * @param The authority being transfered to. */
     event AuthorityTransfer (address indexed authority);
