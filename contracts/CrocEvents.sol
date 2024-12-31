@@ -17,7 +17,6 @@ library CrocEvents {
      * @param minOutput The minimum output of tokens the user is willing to accept as the result of the swap.
      * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it.
      * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it.
-     * @param tip A user-designated liquidity fee paid to the LPs in the pool. 
      */
     event Swap(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, bool isBuy, bool inBaseQty, uint128 qty, uint128 minOutput, int128 baseFlow, int128 quoteFlow);
 
