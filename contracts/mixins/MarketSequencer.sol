@@ -72,16 +72,12 @@ contract MarketSequencer is TradeMatcher {
                            address base,
                            address quote,
                            uint256 poolIdx,
-                           bool isBuy
+                           uint128 minOutput
     ) internal returns (Chaining.PairFlow memory flow) {
         CurveMath.CurveState memory curve = snapCurve(pool.hash_);
         sweepSwapLiq(flow, curve, curve.priceRoot_.getTickAtSqrtRatio(), dir, pool);
         commitCurve(pool.hash_, curve);
-        if (isBuy) {
-            emit CrocEvents.Swap(lockHolder_, base, quote, poolIdx, flow.baseFlow_, flow.quoteFlow_);
-        } else {
-            emit CrocEvents.Swap(lockHolder_, quote, base, poolIdx, flow.quoteFlow_, flow.baseFlow_);
-        }
+        emit CrocEvents.Swap(lockHolder_, base, quote, poolIdx, dir.isBuy_, dir.inBaseQty_, dir.qty_, minOutput, flow.baseFlow_, flow.quoteFlow_);
     }
 
     /* @notice Mints concentrated liquidity in the form of a range order on to the pool.
@@ -288,13 +284,8 @@ contract MarketSequencer is TradeMatcher {
         cntx.roll_.plugSwapGap(dir, flow);
         if (dir.qty_ != 0) {
             callSwap(flow, curve, dir, cntx.pool_);            
-            if (dir.isBuy_) {
-                emit CrocEvents.Swap(lockHolder_, pairs.baseToken_, pairs.quoteToken_,
-                                     poolIdx, flow.baseFlow_, flow.quoteFlow_);
-            } else {
-                emit CrocEvents.Swap(lockHolder_, pairs.quoteToken_, pairs.baseToken_,
-                                     poolIdx, flow.quoteFlow_, flow.baseFlow_);
-            }
+            emit CrocEvents.Swap(lockHolder_, pairs.baseToken_, pairs.quoteToken_,
+                                 poolIdx, dir.isBuy_, dir.inBaseQty_, dir.qty_, 0, flow.baseFlow_, flow.quoteFlow_);
         }
     }
 

@@ -39,7 +39,7 @@ contract HotPath is MarketSequencer, SettleLayer, ProtocolAccount {
         PoolSpecs.PoolCursor memory pool = preparePoolCntx
             (base, quote, poolIdx, poolTip, isBuy, inBaseQty, qty);
 
-        Chaining.PairFlow memory flow = swapDir(pool, isBuy, inBaseQty, qty, limitPrice, base, quote, poolIdx);
+        Chaining.PairFlow memory flow = swapDir(pool, isBuy, inBaseQty, qty, limitPrice, base, quote, poolIdx, minOutput);
         (baseFlow, quoteFlow) = (flow.baseFlow_, flow.quoteFlow_);
 
         pivotOutFlow(flow, minOutput, isBuy, inBaseQty);        
@@ -69,7 +69,7 @@ contract HotPath is MarketSequencer, SettleLayer, ProtocolAccount {
     /* @notice Wrapper call to setup the swap directive object and call the swap logic in
      *         the MarketSequencer mixin. */
     function swapDir (PoolSpecs.PoolCursor memory pool, bool isBuy,
-                      bool inBaseQty, uint128 qty, uint128 limitPrice, address base, address quote, uint256 poolIdx) private
+                      bool inBaseQty, uint128 qty, uint128 limitPrice, address base, address quote, uint256 poolIdx, uint128 minOutput) private
         returns (Chaining.PairFlow memory) {
         Directives.SwapDirective memory dir;
         dir.isBuy_ = isBuy;
@@ -77,7 +77,7 @@ contract HotPath is MarketSequencer, SettleLayer, ProtocolAccount {
         dir.qty_ = qty;
         dir.limitPrice_ = limitPrice;
         dir.rollType_ = 0;
-        return swapOverPool(dir, pool, base, quote, poolIdx, isBuy);
+        return swapOverPool(dir, pool, base, quote, poolIdx, minOutput);
     }
 
     /* @notice Given a pair and pool type index queries and returns the current specs for

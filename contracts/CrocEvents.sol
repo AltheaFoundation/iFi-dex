@@ -8,13 +8,18 @@ library CrocEvents {
 
     /* @notice Emitted whenever a swap is performed, exchanging buy tokens for sell tokens.
      * @param user The address of the user performing the swap.
-     * @param buy The address of the token being bought.
-     * @param sell The address of the token being sold.
+     * @param base The address of the base token of the pool.
+     * @param quote The address of the quote token of the pool.
      * @param poolIdx The template of the relevant pool.
-     * @param buyFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
-     * @param sellFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it
+     * @param isBuy If true, the user is swapping base for quote, otherwise it's quote for base.
+     * @param inBaseQty If true, the swap quantity is denominated in base tokens, otherwise in quote tokens.
+     * @param qty The total amount of base (quote) tokens being swapped if inBaseQty is true (false).
+     * @param minOutput The minimum output of tokens the user is willing to accept as the result of the swap.
+     * @param baseFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it.
+     * @param quoteFlow A positive value indicates tokens flowing into the pool, negative indicates tokens flowing out of it.
+     * @param tip A user-designated liquidity fee paid to the LPs in the pool. 
      */
-    event Swap(address indexed user, address indexed buy, address indexed sell, uint256 poolIdx, int128 buyFlow, int128 sellFlow);
+    event Swap(address indexed user, address indexed base, address indexed quote, uint256 poolIdx, bool isBuy, bool inBaseQty, uint128 qty, uint128 minOutput, int128 baseFlow, int128 quoteFlow);
 
     /* @notice Emitted when a concentrated liquidity position is created, or additional liquidity is added to an existing position.
      * @param user The address of the user performing the mint.
