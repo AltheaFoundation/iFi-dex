@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import '../libraries/ProtocolCmd.sol';
 import '../interfaces/ICrocMinion.sol';
 import '../mixins/StorageLayout.sol';
-import '../vendor/compound/Timelock.sol';
+// import '../vendor/compound/Timelock.sol';
 import '../CrocSwapDex.sol';
 
 /* @title CrocPolicy
@@ -120,9 +120,11 @@ contract CrocPolicy is ICrocMaster {
         opsAuthority_ = ops;
         treasuryAuthority_ = treasury;
         emergencyAuthority_ = emergency;  
-        Timelock(payable(treasury)).acceptAdmin();
-        Timelock(payable(ops)).acceptAdmin();
-        Timelock(payable(emergency)).acceptAdmin();
+        // Do not enforce the use of Timelock because CrocPolicy should be controlled by the Althea-L1 gov module
+
+        // Timelock(payable(treasury)).acceptAdmin();
+        // Timelock(payable(ops)).acceptAdmin();
+        // Timelock(payable(emergency)).acceptAdmin();
     }
 
     /* @notice Resolution from the ops authority which calls protocolCmd() on the 
