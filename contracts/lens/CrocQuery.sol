@@ -121,12 +121,68 @@ contract CrocQuery {
      * @return The total amount of surplus collateral held by this owner in this token.
      *         0 if none. */
     function querySurplus (address owner, address token)
-        public view returns (uint128 surplus) {
+        public view returns (uint128 surplus, uint32 nonce, uint32 agentCallsLeft) {
+        // Equivalent to userBals_[tokenKey(owner, token)]; as seen in AgentMask.sol
         bytes32 key = keccak256(abi.encode(owner, token));
         bytes32 slot = keccak256(abi.encode(key, CrocSlots.BAL_MAP_SLOT));
         uint256 val = CrocSwapDex(dex_).readSlot(uint256(slot));
-        surplus = uint128((val << 128) >> 128);
+        (surplus, nonce, agentCallsLeft) = userBalanceFromUint256(val);
     }
+
+
+    /* @notice Queries and returns the UserBalance values for a specific nonce salt
+     *
+     * @param client The address of the actual user
+     * @param nonceSalt The arbitrary 32 bytes of salt used in multidimensional nonces
+     *
+     * @return The stored UserBalance values at the nonce location, including nonce */
+    function queryRelayNonce (address client, bytes32 nonceSalt)
+        public view returns (uint128 surplus, uint32 nonce, uint32 agentCallsLeft) {
+        // Equivalent to userBals_[nonceKey(client, nonceSalt)]; as seen in AgentMask.sol
+        bytes32 key = nonceKey(client, nonceSalt);
+        bytes32 slot = keccak256(abi.encode(key, CrocSlots.BAL_MAP_SLOT));
+        uint256 val = CrocSwapDex(dex_).readSlot(uint256(slot));
+        (surplus, nonce, agentCallsLeft) = userBalanceFromUint256(val);
+    }
+
+    /* @notice Queries and returns the UserBalance values for a specific agent nonce
+     *
+     * @param client The address of the actual user
+     * @param nonceSalt The arbitrary 32 bytes of salt used in multidimensional nonces
+     *
+     * @return The stored UserBalance values at the nonce location, including nonce and agentCallsLeft */
+    function queryAgentNonce (address client, address agent, uint16 callPath)
+        public view returns (uint128 surplus, uint32 nonce, uint32 agentCallsLeft) {
+        // Equivalent to userBals_[nonceKey(client, nonceSalt)]; as seen in AgentMask.sol
+        bytes32 key = agentKey(client, agent, callPath);
+        bytes32 slot = keccak256(abi.encode(key, CrocSlots.BAL_MAP_SLOT));
+        uint256 val = CrocSwapDex(dex_).readSlot(uint256(slot));
+        (surplus, nonce, agentCallsLeft) = userBalanceFromUint256(val);
+    }
+
+    function userBalanceFromUint256 (uint256 val) internal pure returns (uint128 surplus, uint32 nonce, uint32 agentCallsLeft) {
+        // Packed on the right
+        surplus = uint128((val << 128) >> 128);
+        // Packed in the middle
+        nonce = uint32((val << 96) >> 224);
+        // Packed on the left
+        agentCallsLeft = uint32((val << 64) >> 224);
+    }
+    // Copied from StorageLayout.sol
+    struct UserBalance {
+        uint128 surplusCollateral_;
+        uint32 nonce_;
+        uint32 agentCallsLeft_;
+    }
+    // Copied from AgentMask.sol
+    function nonceKey (address user, bytes32 innerKey) pure internal returns (bytes32) {
+        return keccak256(abi.encode(user, innerKey));
+    }
+    function agentKey (address user, address agent, uint16 callPath) pure internal
+        returns (bytes32) {
+        return keccak256(abi.encode(user, agent, callPath));
+    }
+
 
     /* @notice Queries and returns the surplus collateral of a virtual token
      *
@@ -139,7 +195,7 @@ contract CrocQuery {
     function queryVirtual (address owner, address tracker, uint256 salt)
         public view returns (uint128 surplus) {
         address token = PoolSpecs.virtualizeAddress(tracker, salt);
-        surplus = querySurplus(owner, token);
+        (surplus, , ) = querySurplus(owner, token);
     }
 
     /* @notice Queries and returns the current protocol fees accumulated for a given token. */
