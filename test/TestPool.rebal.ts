@@ -118,8 +118,8 @@ describe('Pool Rebalance', () => {
         let order = makeRebalOrder()
         let tx = await test.testOrder(order);
 
-        let baseSurp = (await test.query).querySurplus(await (await test.trader).getAddress(), baseToken.address)
-        let quoteSurp = (await test.query).querySurplus(await (await test.trader).getAddress(), quoteToken.address)
+        let baseSurp = (await (await test.query).querySurplus(await (await test.trader).getAddress(), baseToken.address)).surplus
+        let quoteSurp = (await (await test.query).querySurplus(await (await test.trader).getAddress(), quoteToken.address)).surplus
 
         expect(await baseSurp).to.be.gt(0)
         expect(await baseSurp).to.be.lt(100)
@@ -219,8 +219,8 @@ describe('Pool Rebalance', () => {
         let order = makeRebalOrderTwo()
         let tx = await test.testOrder(order);
 
-        let baseSurp = (await test.query).querySurplus(await (await test.trader).getAddress(), baseToken.address)
-        let quoteSurp = (await test.query).querySurplus(await (await test.trader).getAddress(), quoteToken.address)
+        let baseSurp = (await (await test.query).querySurplus(await (await test.trader).getAddress(), baseToken.address)).surplus
+        let quoteSurp = (await (await test.query).querySurplus(await (await test.trader).getAddress(), quoteToken.address)).surplus
 
         expect(await baseSurp).to.be.eq(0)
         expect(await quoteSurp).to.be.gt(0)

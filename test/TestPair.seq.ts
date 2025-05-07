@@ -101,9 +101,9 @@ describe('Sequence Pair', () => {
         expect(await test2.snapBaseOwed()).to.equal(0)        
         expect(await test2.snapQuoteOwed()).to.equal(0)
 
-        expect(await (await test.query).querySurplus(owner, test.base.address)).to.eq(9979)
-        expect(await (await test.query).querySurplus(owner, test.quote.address)).to.eq(0)
-        expect(await (await test.query).querySurplus(owner, test2.quote.address)).to.eq(34982)
+        expect((await (await test.query).querySurplus(owner, test.base.address)).surplus).to.eq(9979)
+        expect((await (await test.query).querySurplus(owner, test.quote.address)).surplus).to.eq(0)
+        expect((await (await test.query).querySurplus(owner, test2.quote.address)).surplus).to.eq(34982)
     })
 
     it("surplus partial", async() => {
@@ -146,9 +146,9 @@ describe('Sequence Pair', () => {
         expect(await test2.snapBaseOwed()).to.equal(0)        
         expect(await test2.snapQuoteOwed()).to.equal(0)
 
-        expect(await (await test.query).querySurplus(owner, test.base.address)).to.eq(0)
-        expect(await (await test.query).querySurplus(owner, test.quote.address)).to.eq(10000)
-        expect(await (await test.query).querySurplus(owner, test2.quote.address)).to.eq(34982)
+        expect((await (await test.query).querySurplus(owner, test.base.address)).surplus).to.eq(0)
+        expect((await (await test.query).querySurplus(owner, test.quote.address)).surplus).to.eq(10000)
+        expect((await (await test.query).querySurplus(owner, test2.quote.address)).surplus).to.eq(34982)
     })
 
     it("quote entry", async() => {

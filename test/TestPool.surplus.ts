@@ -38,13 +38,13 @@ describe('Pool Surplus', () => {
         let quoteBal = (await test.quote.balanceOf(sender)).toNumber()
         let baseBal = (await test.base.balanceOf(sender)).toNumber()
 
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000);
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000);
 
         await test.testCollectSurplus(await test.trader, sender, 40000, baseToken.address, false)
         await test.testCollectSurplus(await test.trader, sender, 75000, quoteToken.address, false)
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(60000)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(175000)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(60000)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(175000)
 
         expect(await test.base.balanceOf(sender)).to.equal(baseBal + 40000)
         expect(await test.quote.balanceOf(sender)).to.equal(quoteBal + 75000)
@@ -64,8 +64,8 @@ describe('Pool Surplus', () => {
         expect(await test.snapBaseOwed()).to.equal(0)
         expect(await test.snapQuoteOwed()).to.equal(8168)
 
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000-12251)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000-12251)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000)
      })
 
      it("debit partial entry", async() => {
@@ -82,8 +82,8 @@ describe('Pool Surplus', () => {
         expect(await test.snapBaseOwed()).to.equal(22478)
         expect(await test.snapQuoteOwed()).to.equal(81653)
 
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(0)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(0)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000)
      })
 
      it("credit entry", async() => {
@@ -103,8 +103,8 @@ describe('Pool Surplus', () => {
         expect(await test.snapBaseOwed()).to.equal(0)
         expect(await test.snapQuoteOwed()).to.equal(-8164)
 
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000-4)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000-4)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000)
      })
 
      it("debit exit", async() => {
@@ -121,8 +121,8 @@ describe('Pool Surplus', () => {
         expect(await test.snapBaseOwed()).to.equal(12251)
         expect(await test.snapQuoteOwed()).to.equal(0)
 
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000-8168)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000-8168)
      })
 
      it("debit partial exit", async() => {
@@ -139,8 +139,8 @@ describe('Pool Surplus', () => {
         expect(await test.snapBaseOwed()).to.equal(612376)
         expect(await test.snapQuoteOwed()).to.equal(158252)
 
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(0)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(0)
      })
 
      it("credit exit", async() => {
@@ -160,8 +160,8 @@ describe('Pool Surplus', () => {
         expect(await test.snapBaseOwed()).to.equal(-12247)
         expect(await test.snapQuoteOwed()).to.equal(0)
 
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000-4)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000-4)
      })
 
      it("swap hotpath", async() => {
@@ -173,8 +173,8 @@ describe('Pool Surplus', () => {
         expect(await test.snapBaseOwed()).to.equal(0)
         expect(await test.snapQuoteOwed()).to.equal(0)
 
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000-1000)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000+648)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000-1000)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000+648)
      })
 
      it("mint hotpath", async() => {
@@ -186,8 +186,8 @@ describe('Pool Surplus', () => {
       expect(await test.snapBaseOwed()).to.equal(0)
       expect(await test.snapQuoteOwed()).to.equal(0)
 
-      expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(35567)
-      expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(211406)
+      expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(35567)
+      expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(211406)
       
      })
      
@@ -203,8 +203,8 @@ describe('Pool Surplus', () => {
         expect(await test.snapBaseOwed()).to.equal(0)
         expect(await test.snapQuoteOwed()).to.equal(0)
 
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000-4)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000-4)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000-4)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000-4)
       })
 
       it("mint ambient hotpath", async() => {
@@ -216,8 +216,8 @@ describe('Pool Surplus', () => {
          expect(await test.snapBaseOwed()).to.equal(0)
          expect(await test.snapQuoteOwed()).to.equal(0)
    
-         expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(37290)
-         expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(208192)         
+         expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(37290)
+         expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(208192)         
         })
         
       it("burn ambient hotpath", async() => {
@@ -230,8 +230,8 @@ describe('Pool Surplus', () => {
          expect(await test.snapBaseOwed()).to.equal(0)
          expect(await test.snapQuoteOwed()).to.equal(0)
  
-         expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000-4)
-         expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000-4)
+         expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000-4)
+         expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000-4)
       })
       
       it("swap base settle", async() => {
@@ -243,8 +243,8 @@ describe('Pool Surplus', () => {
          expect(await test.snapBaseOwed()).to.equal(0)
          expect(await test.snapQuoteOwed()).to.equal(-648)
  
-         expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000-1000)
-         expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000)
+         expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000-1000)
+         expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000)
       })
 
       it("swap quote settle", async() => {
@@ -256,8 +256,8 @@ describe('Pool Surplus', () => {
          expect(await test.snapBaseOwed()).to.equal(1000)
          expect(await test.snapQuoteOwed()).to.equal(0)
  
-         expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000)
-         expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000+648)
+         expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000)
+         expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000+648)
       })
 
       it("mint base settle", async() => {
@@ -269,8 +269,8 @@ describe('Pool Surplus', () => {
          expect(await test.snapBaseOwed()).to.equal(0)
          expect(await test.snapQuoteOwed()).to.equal(41808)
    
-         expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(37290)
-         expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000)         
+         expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(37290)
+         expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000)         
       })
 
       it("mint quote settle", async() => {
@@ -282,8 +282,8 @@ describe('Pool Surplus', () => {
          expect(await test.snapBaseOwed()).to.equal(62710)
          expect(await test.snapQuoteOwed()).to.equal(0)
    
-         expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000)
-         expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(208192)         
+         expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000)
+         expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(208192)         
       })
 })
 
@@ -310,13 +310,13 @@ describe('Pool Surplus Ether', () => {
       let quoteBal = (await test.quote.balanceOf(sender))
       let baseBal = (await test.base.balanceOf(sender))
 
-      expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(1000000000000)
-      expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(2500);
+      expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(1000000000000)
+      expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(2500);
 
       await test.testCollectSurplus(await test.trader, sender, 200000000000, baseToken.address, false)
       await test.testCollectSurplus(await test.trader, sender, 1000, quoteToken.address, false)
-      expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(800000000000)
-      expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(1500)
+      expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(800000000000)
+      expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(1500)
   })
 
 })

@@ -163,9 +163,9 @@ describe('Pool Governance', () => {
       await expect(ops.treasuryResolution(pool.address, test.COLD_PROXY, collectCmd(), true)).to.be.reverted
 
       // Successful treasury payout
-      let snap = await (await test.query).querySurplus(policy2.address, baseToken.address)
+      let snap = (await (await test.query).querySurplus(policy2.address, baseToken.address)).surplus
       await treasury.treasuryResolution(pool.address, test.COLD_PROXY, collectCmd(), true)
-      expect(await (await test.query).querySurplus(policy2.address, baseToken.address)).to.gt(snap);
+      expect((await (await test.query).querySurplus(policy2.address, baseToken.address)).surplus).to.gt(snap);
     })
 
     it("collect treasury time delay", async() => {
@@ -183,9 +183,9 @@ describe('Pool Governance', () => {
       await hre.ethers.provider.send("evm_increaseTime", [3600*24+1]) // One more day... treasury valid
 
       // Successful treasury payout
-      let snap = await (await test.query).querySurplus(policy2.address, baseToken.address)
+      let snap = (await (await test.query).querySurplus(policy2.address, baseToken.address)).surplus
       await treasury.treasuryResolution(pool.address, test.COLD_PROXY, collectCmd(), true)
-      expect(await (await test.query).querySurplus(policy2.address, baseToken.address)).to.gt(snap);
+      expect((await (await test.query).querySurplus(policy2.address, baseToken.address)).surplus).to.gt(snap);
     })
 
 

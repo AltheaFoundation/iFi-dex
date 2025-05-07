@@ -218,7 +218,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
         const SALT = 15
@@ -231,7 +231,7 @@ describe('Pool Relayer Agent', () => {
 
        let nextBal = await baseToken.balanceOf(other)
        expect(nextBal.sub(initBal)).to.equal(5000)
-       expect(await query.querySurplus(accts[0].address, baseToken.address)).to.equal(initSurplus.sub(5000))
+       expect((await query.querySurplus(accts[0].address, baseToken.address)).surplus).to.equal(initSurplus.sub(5000))
     }) 
 
     it("nonce no repeat", async() => {
@@ -239,7 +239,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
        let cmd = disburseCmd(other, 5000)
@@ -256,7 +256,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
         const SALT = 15
@@ -273,7 +273,7 @@ describe('Pool Relayer Agent', () => {
 
        let nextBal = await baseToken.balanceOf(other)
        expect(nextBal.sub(initBal)).to.equal(20000)
-       expect(await query.querySurplus(accts[0].address, baseToken.address)).to.equal(initSurplus.sub(20000))
+       expect((await query.querySurplus(accts[0].address, baseToken.address)).surplus).to.equal(initSurplus.sub(20000))
     }) 
 
     it("relayer address", async() => {
@@ -281,7 +281,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
        let cmd = disburseCmd(other, 5000)
@@ -293,7 +293,7 @@ describe('Pool Relayer Agent', () => {
 
        let nextBal = await baseToken.balanceOf(other)
        expect(nextBal.sub(initBal)).to.equal(5000)
-       expect(await query.querySurplus(accts[0].address, baseToken.address)).to.equal(initSurplus.sub(5000))
+       expect((await query.querySurplus(accts[0].address, baseToken.address)).surplus).to.equal(initSurplus.sub(5000))
     }) 
 
     it("unauthorized relayer", async() => {
@@ -301,7 +301,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
        let cmd = disburseCmd(other, 5000)
@@ -318,7 +318,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
        let cmd = disburseCmd(other, 5000)
@@ -334,7 +334,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
        let cmd = disburseCmd(other, 5000)
@@ -350,7 +350,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
         const SALT = 5000
@@ -366,7 +366,7 @@ describe('Pool Relayer Agent', () => {
 
        let nextBal = await baseToken.balanceOf(other)
        expect(nextBal.sub(initBal)).to.equal(5000)
-       expect(await query.querySurplus(accts[0].address, baseToken.address)).to.equal(initSurplus.sub(5000))
+       expect((await query.querySurplus(accts[0].address, baseToken.address)).surplus).to.equal(initSurplus.sub(5000))
     }) 
 
     it("nonce reset wrong", async() => {
@@ -374,7 +374,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
         const SALT = 5000
@@ -394,7 +394,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
         const SALT = 5000
@@ -411,7 +411,7 @@ describe('Pool Relayer Agent', () => {
 
        let nextBal = await baseToken.balanceOf(other)
        expect(nextBal.sub(initBal)).to.equal(5000)
-       expect(await query.querySurplus(accts[0].address, baseToken.address)).to.equal(initSurplus.sub(5000))
+       expect((await query.querySurplus(accts[0].address, baseToken.address)).surplus).to.equal(initSurplus.sub(5000))
     }) 
 
     it("nonce reset cond mock args", async() => {
@@ -419,7 +419,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
         const SALT = 5000
@@ -438,7 +438,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
         const SALT = 5000
@@ -452,7 +452,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
         let initBal = await baseToken.balanceOf(other)
 
         const SALT = 5000
@@ -466,7 +466,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
 
         const SALT = 15
        let cmd = disburseCmd(other, 5000)
@@ -477,8 +477,8 @@ describe('Pool Relayer Agent', () => {
        await pool.userCmdRelayer(test.COLD_PROXY, cmd, cond, tip, signature)
 
        // Tip gets paid to the specified recipient in the specified amount
-       expect(await query.querySurplus(third, baseToken.address)).to.equal(8500)
-       expect(await query.querySurplus(accts[0].address, baseToken.address)).to.equal(initSurplus.sub(5000+8500))
+       expect((await query.querySurplus(third, baseToken.address)).surplus).to.equal(8500)
+       expect((await query.querySurplus(accts[0].address, baseToken.address)).surplus).to.equal(initSurplus.sub(5000+8500))
     }) 
 
     it("tip sender", async() => {
@@ -486,7 +486,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(third, baseToken.address)
+        let initSurplus = (await query.querySurplus(third, baseToken.address)).surplus
 
         // This will tip whatever relayer sends the dex call
         const MAGIC_SENDER = "0x0000000000000000000000000000000000000100"
@@ -498,7 +498,7 @@ describe('Pool Relayer Agent', () => {
        let signature = await formSignature(test.COLD_PROXY, cmd, cond, tip)
        
        await pool.connect(await test.third).userCmdRelayer(test.COLD_PROXY, cmd, cond, tip, signature)
-       expect(await query.querySurplus(third, baseToken.address)).to.equal(initSurplus.add(8500))
+       expect((await query.querySurplus(third, baseToken.address)).surplus).to.equal(initSurplus.add(8500))
     }) 
 
     it("tip origin", async() => {
@@ -506,7 +506,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(third, baseToken.address)
+        let initSurplus = (await query.querySurplus(third, baseToken.address)).surplus
 
         // This will tip whatever relayer is the tx.origin of the transaction
         const MAGIC_SENDER = "0x0000000000000000000000000000000000000200"
@@ -518,7 +518,7 @@ describe('Pool Relayer Agent', () => {
        let signature = await formSignature(test.COLD_PROXY, cmd, cond, tip)
        
        await pool.connect(await test.third).userCmdRelayer(test.COLD_PROXY, cmd, cond, tip, signature)
-       expect(await query.querySurplus(third, baseToken.address)).to.equal(initSurplus.add(8500))
+       expect((await query.querySurplus(third, baseToken.address)).surplus).to.equal(initSurplus.add(8500))
     }) 
 
 
@@ -533,7 +533,7 @@ describe('Pool Relayer Agent', () => {
 
         let pool = await test.dex
         let query = await test.query
-        let initSurplus = await query.querySurplus(accts[0].address, baseToken.address)
+        let initSurplus = (await query.querySurplus(accts[0].address, baseToken.address)).surplus
 
         // Take rate is in 1/256, so this is equivlent to 25% take rate
         await setTakeRate(64)
@@ -547,7 +547,7 @@ describe('Pool Relayer Agent', () => {
        await pool.userCmdRelayer(test.COLD_PROXY, cmd, cond, tip, signature)
 
        // Relayer receives 75% of the tip, protocol receives 25%
-       expect(await query.querySurplus(third, baseToken.address)).to.equal(6000)
+       expect((await query.querySurplus(third, baseToken.address)).surplus).to.equal(6000)
        expect(await query.queryProtocolAccum(baseToken.address)).to.equal(2000)
     }) 
 

@@ -1047,8 +1047,8 @@ describe('Swap Router Bypass', () => {
         expect(await test.snapBaseOwed()).to.equal(0)
         expect(await test.snapQuoteOwed()).to.equal(0)
 
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000-1000)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000+648)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000-1000)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000+648)
     })
 })
 
@@ -1398,7 +1398,7 @@ describe('Swap Router Bypass Eth', () => {
         expect(await test.snapBaseOwed()).to.equal(0)
         expect(await test.snapQuoteOwed()).to.equal(0)
 
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000-1000)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000+648)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000-1000)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000+648)
     })
 })

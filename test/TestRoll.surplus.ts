@@ -50,8 +50,8 @@ describe('Roll Surplus', () => {
         expect(await test.liquidity()).to.equal(1000*1024 + 81646)
         expect(await test.snapBaseOwed()).to.equal(0)
         expect(await test.snapQuoteOwed()).to.equal(66667)
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(1)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(1)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000)
      })
 
      it("roll stacked", async() => {
@@ -82,8 +82,8 @@ describe('Roll Surplus', () => {
         expect(await test.liquidity()).to.equal(100000*1024 + 73475)
         expect(await test.snapBaseOwed()).to.equal(0)
         expect(await test.snapQuoteOwed()).to.equal(53329)
-        expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(1)
-        expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(250000)
+        expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(1)
+        expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(250000)
    })
 
    it("surplus exit", async() => {
@@ -108,8 +108,8 @@ describe('Roll Surplus', () => {
       expect(await test.liquidity()).to.equal(1000*1024 + 306181)
       expect(await test.snapBaseOwed()).to.equal(374997)
       expect(await test.snapQuoteOwed()).to.equal(0)
-      expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(100000)
-      expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(1)
+      expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(100000)
+      expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(1)
    })
 
    it("surplus entry+exit", async() => {
@@ -139,7 +139,7 @@ describe('Roll Surplus', () => {
       expect(await test.liquidity()).to.equal(1000*1024 + 306181)
       expect(await test.snapBaseOwed()).to.equal(0)
       expect(await test.snapQuoteOwed()).to.equal(0)
-      expect(await (await test.query).querySurplus(sender, baseToken.address)).to.equal(125003)
-      expect(await (await test.query).querySurplus(sender, quoteToken.address)).to.equal(1)
+      expect((await (await test.query).querySurplus(sender, baseToken.address)).surplus).to.equal(125003)
+      expect((await (await test.query).querySurplus(sender, quoteToken.address)).surplus).to.equal(1)
    })
 })
