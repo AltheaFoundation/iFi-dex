@@ -115,8 +115,8 @@ async function deploy() {
     timeDiff = timeDiff / 1000;
     provider
       .getBlockNumber()
-      .then((_) => (success = true))
-      .catch((_) => console.log("Ethereum RPC error, trying again"));
+      .then((_: any) => (success = true))
+      .catch((_: any) => console.log("Ethereum RPC error, trying again"));
 
     if (timeDiff > 600) {
       console.log(
