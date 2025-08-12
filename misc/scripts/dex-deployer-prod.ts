@@ -497,13 +497,64 @@ async function deploy() {
   // The schema will be 1 unless the dex has been upgraded and needed new pool schema values
 }
 
+async function setProtocolTakeRate() {
+  var startTime = new Date();
+  const provider = await new ethers.providers.JsonRpcProvider(args["eth-node"]);
+  let wallet = new ethers.Wallet(args["eth-privkey"], provider);
+
+  // Attempt to contact the Ethereum node before getting started (timeout after 10 minutes)
+  var success = false;
+  while (!success) {
+    var present = new Date();
+    var timeDiff: number = present.getTime() - startTime.getTime();
+    timeDiff = timeDiff / 1000;
+    provider
+      .getBlockNumber()
+      .then((_: any) => (success = true))
+      .catch((_: any) => console.log("Ethereum RPC error, trying again"));
+
+    if (timeDiff > 600) {
+      console.log(
+        "Could not contact Ethereum RPC after 10 minutes, check the URL!"
+      );
+      exit(1);
+    }
+    await sleep(1000);
+  }
+
+  const dexAddress = "0xd263DC98dEc57828e26F69bA8687281BA5D052E0"
+
+  // Start connection code
+  let dex = (await ethers.getContractAt(
+    "CrocSwapDex",
+    dexAddress,
+    wallet
+  )) as CrocSwapDex;
+  console.log("Connected to DEX at Address - ", dexAddress);
+
+
+
+  console.log("Setting default protocol take rate to 0");
+
+  let abiCoder = new ethers.utils.AbiCoder();
+
+  // uint8 takeRate
+  let code = 114;
+  let templateCmd = abiCoder.encode(
+    ["uint8", "uint8"],
+    [110, code]
+  );
+  let tx = await dex.protocolCmd(3, templateCmd, false, overrides);
+  await tx.wait();
+}
+
 function getContractArtifacts(path: string): { bytecode: string; abi: string } {
   var { bytecode, abi } = JSON.parse(fs.readFileSync(path, "utf8").toString());
   return { bytecode, abi };
 }
 
 async function main() {
-  await deploy();
+  await setProtocolTakeRate();
 }
 
 function sleep(ms: number) {
