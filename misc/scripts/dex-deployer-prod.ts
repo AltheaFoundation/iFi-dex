@@ -339,7 +339,8 @@ async function deploy() {
     ["uint8", "address", "uint16"],
     [21, coldAddress, COLD_PROXY_IDX]
   );
-  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
+  let overrides = { gasLimit: 100000000 };
+  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true, overrides);
   await tx.wait();
 
   // Install LongPath in callpath 4
@@ -348,7 +349,7 @@ async function deploy() {
     ["uint8", "address", "uint16"],
     [21, longAddress, LONG_PROXY_IDX]
   );
-  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
+  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true, overrides);
   await tx.wait();
 
   // Install WarmPath in callpath 2
@@ -357,7 +358,7 @@ async function deploy() {
     ["uint8", "address", "uint16"],
     [21, warmAddress, LP_PROXY_IDX]
   );
-  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
+  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true, overrides);
   await tx.wait();
 
   // Install HotProxy in callpath 1
@@ -366,7 +367,7 @@ async function deploy() {
     ["uint8", "address", "uint16"],
     [21, hotAddress, SWAP_PROXY_IDX]
   );
-  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
+  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true, overrides);
   await tx.wait();
 
   // Install MicroPaths in callpath 5
@@ -375,7 +376,7 @@ async function deploy() {
     ["uint8", "address", "uint16"],
     [21, microAddress, MICRO_PROXY_IDX]
   );
-  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
+  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true, overrides);
   await tx.wait();
 
   // Install KnockoutLiqPath in callpath 7
@@ -384,7 +385,7 @@ async function deploy() {
     ["uint8", "address", "uint16"],
     [21, knockout_liqAddress, KNOCKOUT_LP_PROXY_IDX]
   );
-  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
+  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true, overrides);
   await tx.wait();
 
   // Install KnockoutFlagPath in callpath 3500
@@ -393,7 +394,7 @@ async function deploy() {
     ["uint8", "address", "uint16"],
     [21, knockout_flagAddress, FLAG_CROSS_PROXY_IDX]
   );
-  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
+  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true, overrides);
   await tx.wait();
 
   // Install SafeModePath in callpath 9999
@@ -402,7 +403,7 @@ async function deploy() {
     ["uint8", "address", "uint16"],
     [21, safe_modeAddress, SAFE_MODE_PROXY_PATH]
   );
-  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
+  tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true, overrides);
   await tx.wait();
 
   // Note we do not install the ColdPathUpgrade since it's use is at test runtime
@@ -413,7 +414,7 @@ async function deploy() {
   // the math all works out in the future even if a pool is "empty".
   console.log("Setting initial pool liquidity");
   let setPoolLiqCmd = abiCoder.encode(["uint8", "uint128"], [112, 1]);
-  tx = await dex.protocolCmd(3, setPoolLiqCmd, true);
+  tx = await dex.protocolCmd(3, setPoolLiqCmd, true, overrides);
   await tx.wait();
 
   // Next we set up two "pool templates", which restrict new pools to adhere to a common format.
@@ -480,8 +481,9 @@ async function deploy() {
   let templateCmd = abiCoder.encode(
     ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
     [110, 36000, 5000, 1, 60, stablePairBits, 0]
+
   );
-  tx = await dex.protocolCmd(3, templateCmd, false);
+  tx = await dex.protocolCmd(3, templateCmd, false, overrides);
   await tx.wait();
   // Set the volatile pairs to use index 36001, have a fee of 1%, tick size of 4, 60 second jit time, volatile pair bits, and no oracle
   // Note that the fee is specified in hundredths of a basis point, so 100 basis points is 10000
@@ -489,7 +491,7 @@ async function deploy() {
     ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
     [110, 36001, 10000, 2, 60, volatilePairBits, 0]
   );
-  tx = await dex.protocolCmd(3, templateCmd, false);
+  tx = await dex.protocolCmd(3, templateCmd, false, overrides);
   await tx.wait();
   // On blast the template 420 (used widely) is schema 1, fee rate 1500, protocol take 0, tick size 4, jit thresh 1, knockout bits 34, oracle flags 0
   // The schema will be 1 unless the dex has been upgraded and needed new pool schema values
