@@ -498,6 +498,7 @@ async function deploy() {
 }
 
 async function setProtocolTakeRate() {
+  let overrides = { gasLimit: 20000000 };
   var startTime = new Date();
   const provider = await new ethers.providers.JsonRpcProvider(args["eth-node"]);
   let wallet = new ethers.Wallet(args["eth-privkey"], provider);
