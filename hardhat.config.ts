@@ -69,6 +69,7 @@ const config: HardhatUserConfig = {
         "0x5791240cd5798ecf4862be2c1c1ae882b80a804e7a3fc615a93910c554b23115",
         "0x34d97aaf58b1a81d3ed3068a870d8093c6341cf5d1ef7e6efa03fe7f7fc2c3a8",
       ],
+      gas: 100000000,
     },
     gnosis: {
       url: "https://rpc.gnosischain.com",

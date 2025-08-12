@@ -209,6 +209,11 @@ async function deploy() {
   const longAddress = "0xe18D57A1f1c843182e876A1C10A1380C30032c0d";
   const microAddress = "0x98057e5f5e8cF65cd033a1Cc5D58c16a0c897005";
   const knockout_flagAddress = "0x7b9B118f6467c5fc56406c0e74AB705d444fd0e1";
+  const knockout_liqAddress = "0x140cfe679cfB42AE3204684B56a53E271FD3959f";
+  const safe_modeAddress = "0x0E4feD562AB3fd0601df6CA87A10Fd1cC0bdba4f";
+  const policyAddress = "0x14Ae279edb4D569BAFb98ff08299A0135Da6867a";
+  const queryAddress = "0xf7b59E4f71E467C0e409609A4a0688b073C56142";
+  const impactAddress = "0x9402A37c52319038E4E731A8A765eCc0dF64a918";
 
   // Start connection code
   let dex = (await ethers.getContractAt(
@@ -261,51 +266,43 @@ async function deploy() {
     wallet
   )) as KnockoutFlagPath;
   console.log("Connected to KnockoutFlagPath at Address - ", knockout_flagAddress);
-  // end connection code
 
-  // Deploy the KnockoutLiqPath contract (not installed yet)
-  ({ abi, bytecode } = getContractArtifacts(contract_paths.knockout_liq));
-  factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const knockout_liq = (await factory.deploy(overrides)) as KnockoutLiqPath;
-  await knockout_liq.deployed();
-  const knockout_liqAddress = knockout_liq.address;
-  console.log("KnockoutLiqPath deployed at Address - ", knockout_liqAddress);
+  let knockout_liq = (await ethers.getContractAt(
+    "KnockoutLiqPath",
+    knockout_liqAddress,
+    wallet
+  )) as KnockoutLiqPath;
+  console.log("Connected to KnockoutLiqPath at Address - ", knockout_liqAddress);
 
-  // Deploy the SafeModePath contract (not installed yet)
-  ({ abi, bytecode } = getContractArtifacts(contract_paths.safe_mode));
-  factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const safe_mode = (await factory.deploy(overrides)) as SafeModePath;
-  await safe_mode.deployed();
-  const safe_modeAddress = safe_mode.address;
-  console.log("SafeModePath deployed at Address - ", safe_modeAddress);
+  let safe_mode = (await ethers.getContractAt(
+    "SafeModePath",
+    safe_modeAddress,
+    wallet
+  )) as SafeModePath;
+  console.log("Connected to SafeModePath at Address - ", safe_modeAddress);
 
-  // Deploy the governance contract "CrocPolicy", which does not yet control the DEX
-  ({ abi, bytecode } = getContractArtifacts(contract_paths.policy));
-  factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const policy = (await factory.deploy(
-    dexAddress,
-    nativedexModuleAddress,
-    overrides
+  let policy = (await ethers.getContractAt(
+    "CrocPolicy",
+    policyAddress,
+    wallet
   )) as CrocPolicy;
-  await policy.deployed();
-  const policyAddress = policy.address;
-  console.log("CrocPolicy deployed at Address - ", policyAddress);
+  console.log("Connected to CrocPolicy at Address - ", policyAddress);
 
-  // Deploy the CrocQuery periphery contract, which is not directly connected to the DEX
-  ({ abi, bytecode } = getContractArtifacts(contract_paths.query));
-  factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const query = (await factory.deploy(dexAddress, overrides)) as CrocQuery;
-  await query.deployed();
-  const queryAddress = query.address;
-  console.log("CrocQuery deployed at Address - ", queryAddress);
+  let query = (await ethers.getContractAt(
+    "CrocQuery",
+    queryAddress,
+    wallet
+  )) as CrocQuery;
+  console.log("Connected to CrocQuery at Address - ", queryAddress);
 
-  // Deploy the CrocImpact periphery contract, which is not directly connected to the DEX
-  ({ abi, bytecode } = getContractArtifacts(contract_paths.impact));
-  factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const impact = (await factory.deploy(dexAddress, overrides)) as CrocImpact;
-  await impact.deployed();
-  const impactAddress = impact.address;
-  console.log("CrocImpact deployed at Address - ", impactAddress);
+  let impact = (await ethers.getContractAt(
+    "CrocImpact",
+    impactAddress,
+    wallet
+  )) as CrocImpact;
+  console.log("Connected to CrocImpact at Address - ", impactAddress);
+
+  // end connection code
 
   // // Deploy a test upgrade contract, this is a copy of the ColdPath contract which requires that
   // // it will be installed on callpath 33. See the DEX_UPGRADE test for more.
