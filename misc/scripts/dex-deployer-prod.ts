@@ -6,7 +6,8 @@ import { MicroPaths } from "../../typechain/MicroPaths";
 import { CrocPolicy } from "../../typechain/CrocPolicy";
 import { CrocQuery } from "../../typechain/CrocQuery";
 import { HotPath } from "../../typechain/HotPath";
-import { ethers } from "ethers";
+const hardhat = require("hardhat");
+const ethers = hardhat.ethers;
 import fs from "fs";
 import commandLineArgs from "command-line-args";
 import { exit } from "process";
@@ -140,6 +141,7 @@ async function deploy() {
   var bytecode;
   var factory;
 
+  /*
   // Deploy the CrocSwapDex contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.dex));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
@@ -198,6 +200,96 @@ async function deploy() {
     "KnockoutFlagPath deployed at Address - ",
     knockout_flagAddress
   );
+  */
+
+  const dexAddress = "0xd263DC98dEc57828e26F69bA8687281BA5D052E0"
+  const hotAddress = "0x254f1A4786eEEdF46cDC065a8A59214812CDA7a3";
+  const coldAddress = "0xAb23986c3d2F24EFd823bB8684aFF03A87De6b3C";
+  const warmAddress = "0x64A817A34F3c178258FaB793286f229aD54855f5";
+  const longAddress = "0xe18D57A1f1c843182e876A1C10A1380C30032c0d";
+  const microAddress = "0x98057e5f5e8cF65cd033a1Cc5D58c16a0c897005";
+  const knockout_flagAddress = "0x7b9B118f6467c5fc56406c0e74AB705d444fd0e1";
+
+  // Start connection code
+  let dex = (await ethers.getContractAt(
+    "CrocSwapDex",
+    dexAddress,
+    wallet
+  )) as CrocSwapDex;
+  ({ abi, bytecode } = getContractArtifacts(contract_paths.dex));
+
+  if ((await dex.getDeployedCode()) == null) {
+    console.error("DEX NOT DEPLOYED???");
+    process.exit(1);
+  } 
+  console.log("Discovered DEX at Address - ", dexAddress);
+
+  let hot = (await ethers.getContractAt(
+      "HotProxy",
+    hotAddress,
+    wallet
+  )) as HotProxy;
+  if ((await hot.getDeployedCode()) == null) {
+    console.error("HotProxy NOT DEPLOYED???");
+    process.exit(1);
+  }
+  console.log("Discovered HotProxy at Address - ", hotAddress);
+
+  let cold = (await ethers.getContractAt(
+    "ColdPath",
+    coldAddress,
+    wallet
+  )) as ColdPath;
+  if ((await cold.getDeployedCode()) == null) {
+    console.error("ColdPath NOT DEPLOYED???");
+    process.exit(1);
+  }
+  console.log("Discovered ColdPath at Address - ", coldAddress);
+
+  let warm = (await ethers.getContractAt(
+    "WarmPath",
+    warmAddress,
+    wallet
+  )) as WarmPath;
+  if ((await warm.getDeployedCode()) == null) {
+    console.error("WarmPath NOT DEPLOYED???");
+    process.exit(1);
+  }
+  console.log("Discovered WarmPath at Address - ", warmAddress);
+
+  let long = (await ethers.getContractAt(
+    "LongPath",
+    longAddress,
+    wallet
+  )) as LongPath;
+  if ((await long.getDeployedCode()) == null) {
+    console.error("LongPath NOT DEPLOYED???");
+    process.exit(1);
+  }
+  console.log("Discovered LongPath at Address - ", longAddress);
+
+  let micro = (await ethers.getContractAt(
+    "MicroPaths",
+    microAddress,
+    wallet
+  )) as MicroPaths;
+  if ((await micro.getDeployedCode()) == null) {
+    console.error("MicroPaths NOT DEPLOYED???");
+    process.exit(1);
+  }
+  console.log("Discovered MicroPaths at Address - ", microAddress);
+
+  let knockout_flag = (await ethers.getContractAt(
+    "KnockoutFlagPath",
+    knockout_flagAddress,
+    wallet
+  )) as KnockoutFlagPath;
+  if ((await knockout_flag.getDeployedCode()) == null) {
+    console.error("KnockoutFlagPath NOT DEPLOYED???");
+    process.exit(1);
+  }
+  console.log("Discovered KnockoutFlagPath at Address - ", knockout_flagAddress);
+  // end connection code
 
   // Deploy the KnockoutLiqPath contract (not installed yet)
   ({ abi, bytecode } = getContractArtifacts(contract_paths.knockout_liq));
