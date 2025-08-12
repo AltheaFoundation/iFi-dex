@@ -339,7 +339,7 @@ async function deploy() {
     ["uint8", "address", "uint16"],
     [21, coldAddress, COLD_PROXY_IDX]
   );
-  let overrides = { gasLimit: 100000000 };
+  let overrides = { gasLimit: 20000000 };
   tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true, overrides);
   await tx.wait();
 
