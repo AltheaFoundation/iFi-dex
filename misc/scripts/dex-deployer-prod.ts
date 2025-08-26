@@ -470,9 +470,9 @@ async function deploy() {
   let outOfRangePlaceBits = outOfRangeKnockoutPlaceType << 4;
   
   // Allow pools on the stable pair template to have any knockout position with width of 64 ticks
-  let stablePairBits = stablePairWidthBits | inRangePlaceBits | outOfRangePlaceBits;
+  let stablePairBits = stablePairWidthBits | inRangePlaceBits | outOfRangePlaceBits | onGridBits;
   // Allow pools on the volatile pair template to have any knockout position with width of 1024 ticks
-  let volatilePairBits = volatilePairWidthBits | inRangePlaceBits | outOfRangePlaceBits;
+  let volatilePairBits = volatilePairWidthBits | inRangePlaceBits | outOfRangePlaceBits | onGridBits;
 
 
   console.log("Setting default pool templates (index 36000, 36001)");
@@ -480,7 +480,7 @@ async function deploy() {
   // Note that the fee is specified in hundredths of a basis point, so 50 basis points is 5000
   let templateCmd = abiCoder.encode(
     ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
-    [110, 36000, 5000, 1, 60, stablePairBits, 0]
+    [110, 36000, 5000, 0, 6, stablePairBits, 0]
 
   );
   tx = await dex.protocolCmd(3, templateCmd, false, overrides);

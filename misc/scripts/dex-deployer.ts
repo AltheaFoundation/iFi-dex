@@ -144,114 +144,159 @@ async function deploy() {
   // Deploy the CrocSwapDex contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.dex));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const dex = (await factory.deploy(overrides)) as CrocSwapDex;
+  let deployTx = await factory.getDeployTransaction(overrides);
+  let sentTx = await wallet.sendTransaction(deployTx);
+  let receipt = await sentTx.wait();
+  const dexAddress = receipt.contractAddress;
+  const dex = (await factory.attach(dexAddress)) as CrocSwapDex;
   await dex.deployed();
-  const dexAddress = dex.address;
   console.log("CrocSwapDex deployed at Address - ", dexAddress);
+  console.log("CrocSwapDex gas used: ", receipt.gasUsed.toString());
 
-  // Deploy the HotProxy contract (not installed yet)
+
+  // Deploy the HotProxy contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.hot));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const hot = (await factory.deploy(overrides)) as HotProxy;
+  deployTx = await factory.getDeployTransaction(overrides);
+  sentTx = await wallet.sendTransaction(deployTx);
+  receipt = await sentTx.wait();
+  const hotAddress = receipt.contractAddress;
+  const hot = (await factory.attach(hotAddress)) as HotProxy;
   await hot.deployed();
-  const hotAddress = hot.address;
   console.log("HotProxy deployed at Address - ", hotAddress);
+  console.log("HotProxy gas used: ", receipt.gasUsed.toString());
 
-  // Deploy the ColdPath contract (not installed yet)
+  // Deploy the ColdPath contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.cold));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const cold = (await factory.deploy(overrides)) as ColdPath;
+  deployTx = await factory.getDeployTransaction(overrides);
+  sentTx = await wallet.sendTransaction(deployTx);
+  receipt = await sentTx.wait();
+  const coldAddress = receipt.contractAddress;
+  const cold = (await factory.attach(coldAddress)) as ColdPath;
   await cold.deployed();
-  const coldAddress = cold.address;
   console.log("ColdPath deployed at Address - ", coldAddress);
+  console.log("ColdPath gas used: ", receipt.gasUsed.toString());
 
-  // Deploy the WarmPath contract (not installed yet)
+  // Deploy the WarmPath contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.warm));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const warm = (await factory.deploy(overrides)) as WarmPath;
+  deployTx = await factory.getDeployTransaction(overrides);
+  sentTx = await wallet.sendTransaction(deployTx);
+  receipt = await sentTx.wait();
+  const warmAddress = receipt.contractAddress;
+  const warm = (await factory.attach(warmAddress)) as WarmPath;
   await warm.deployed();
-  const warmAddress = warm.address;
   console.log("WarmPath deployed at Address - ", warmAddress);
+  console.log("WarmPath gas used: ", receipt.gasUsed.toString());
 
-  // Deploy the LongPath contract (not installed yet)
+  // Deploy the LongPath contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.long));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const long = (await factory.deploy(overrides)) as LongPath;
+  deployTx = await factory.getDeployTransaction(overrides);
+  sentTx = await wallet.sendTransaction(deployTx);
+  receipt = await sentTx.wait();
+  const longAddress = receipt.contractAddress;
+  const long = (await factory.attach(longAddress)) as LongPath;
   await long.deployed();
-  const longAddress = long.address;
   console.log("LongPath deployed at Address - ", longAddress);
+  console.log("LongPath gas used: ", receipt.gasUsed.toString());
 
-  // Deploy the MicroPaths contract (not installed yet)
+  // Deploy the MicroPaths contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.micro));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const micro = (await factory.deploy(overrides)) as MicroPaths;
+  deployTx = await factory.getDeployTransaction(overrides);
+  sentTx = await wallet.sendTransaction(deployTx);
+  receipt = await sentTx.wait();
+  const microAddress = receipt.contractAddress;
+  const micro = (await factory.attach(microAddress)) as MicroPaths;
   await micro.deployed();
-  const microAddress = micro.address;
   console.log("MicroPaths deployed at Address - ", microAddress);
+  console.log("MicroPaths gas used: ", receipt.gasUsed.toString());
 
-  // Deploy the KnockoutFlagPath contract (not installed yet)
+  // Deploy the KnockoutFlagPath contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.knockout_flag));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const knockout_flag = (await factory.deploy(overrides)) as KnockoutFlagPath;
+  deployTx = await factory.getDeployTransaction(overrides);
+  sentTx = await wallet.sendTransaction(deployTx);
+  receipt = await sentTx.wait();
+  const knockout_flagAddress = receipt.contractAddress;
+  const knockout_flag = (await factory.attach(knockout_flagAddress)) as KnockoutFlagPath;
   await knockout_flag.deployed();
-  const knockout_flagAddress = knockout_flag.address;
-  console.log(
-    "KnockoutFlagPath deployed at Address - ",
-    knockout_flagAddress
-  );
+  console.log("KnockoutFlagPath deployed at Address - ", knockout_flagAddress);
+  console.log("KnockoutFlagPath gas used: ", receipt.gasUsed.toString());
 
-  // Deploy the KnockoutLiqPath contract (not installed yet)
+  // Deploy the KnockoutLiqPath contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.knockout_liq));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const knockout_liq = (await factory.deploy(overrides)) as KnockoutLiqPath;
+  deployTx = await factory.getDeployTransaction(overrides);
+  sentTx = await wallet.sendTransaction(deployTx);
+  receipt = await sentTx.wait();
+  const knockout_liqAddress = receipt.contractAddress;
+  const knockout_liq = (await factory.attach(knockout_liqAddress)) as KnockoutLiqPath;
   await knockout_liq.deployed();
-  const knockout_liqAddress = knockout_liq.address;
   console.log("KnockoutLiqPath deployed at Address - ", knockout_liqAddress);
+  console.log("KnockoutLiqPath gas used: ", receipt.gasUsed.toString());
 
-  // Deploy the SafeModePath contract (not installed yet)
+  // Deploy the SafeModePath contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.safe_mode));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const safe_mode = (await factory.deploy(overrides)) as SafeModePath;
+  deployTx = await factory.getDeployTransaction(overrides);
+  sentTx = await wallet.sendTransaction(deployTx);
+  receipt = await sentTx.wait();
+  const safe_modeAddress = receipt.contractAddress;
+  const safe_mode = (await factory.attach(safe_modeAddress)) as SafeModePath;
   await safe_mode.deployed();
-  const safe_modeAddress = safe_mode.address;
   console.log("SafeModePath deployed at Address - ", safe_modeAddress);
+  console.log("SafeModePath gas used: ", receipt.gasUsed.toString());
 
-  // Deploy the governance contract "CrocPolicy", which does not yet control the DEX
+  // Deploy the governance contract "CrocPolicy"
   ({ abi, bytecode } = getContractArtifacts(contract_paths.policy));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const policy = (await factory.deploy(
-    dexAddress,
-    nativedexModuleAddress,
-    overrides
-  )) as CrocPolicy;
+  deployTx = await factory.getDeployTransaction(dexAddress, nativedexModuleAddress, overrides);
+  sentTx = await wallet.sendTransaction(deployTx);
+  receipt = await sentTx.wait();
+  const policyAddress = receipt.contractAddress;
+  const policy = (await factory.attach(policyAddress)) as CrocPolicy;
   await policy.deployed();
-  const policyAddress = policy.address;
   console.log("CrocPolicy deployed at Address - ", policyAddress);
+  console.log("CrocPolicy gas used: ", receipt.gasUsed.toString());
 
-  // Deploy the CrocQuery periphery contract, which is not directly connected to the DEX
+  // Deploy the CrocQuery periphery contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.query));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const query = (await factory.deploy(dexAddress, overrides)) as CrocQuery;
+  deployTx = await factory.getDeployTransaction(dexAddress, overrides);
+  sentTx = await wallet.sendTransaction(deployTx);
+  receipt = await sentTx.wait();
+  const queryAddress = receipt.contractAddress;
+  const query = (await factory.attach(queryAddress)) as CrocQuery;
   await query.deployed();
-  const queryAddress = query.address;
   console.log("CrocQuery deployed at Address - ", queryAddress);
+  console.log("CrocQuery gas used: ", receipt.gasUsed.toString());
 
-  // Deploy the CrocImpact periphery contract, which is not directly connected to the DEX
+  // Deploy the CrocImpact periphery contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.impact));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const impact = (await factory.deploy(dexAddress, overrides)) as CrocImpact;
+  deployTx = await factory.getDeployTransaction(dexAddress, overrides);
+  sentTx = await wallet.sendTransaction(deployTx);
+  receipt = await sentTx.wait();
+  const impactAddress = receipt.contractAddress;
+  const impact = (await factory.attach(impactAddress)) as CrocImpact;
   await impact.deployed();
-  const impactAddress = impact.address;
   console.log("CrocImpact deployed at Address - ", impactAddress);
+  console.log("CrocImpact gas used: ", receipt.gasUsed.toString());
 
-  // Deploy a test upgrade contract, this is a copy of the ColdPath contract which requires that
-  // it will be installed on callpath 33. See the DEX_UPGRADE test for more.
+  // Deploy a test upgrade contract
   ({ abi, bytecode } = getContractArtifacts(contract_paths.upgrade_test));
   factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  const upgrade = (await factory.deploy(overrides)) as ColdPathUpgrade;
+  deployTx = await factory.getDeployTransaction(overrides);
+  sentTx = await wallet.sendTransaction(deployTx);
+  receipt = await sentTx.wait();
+  const upgradeAddress = receipt.contractAddress;
+  const upgrade = (await factory.attach(upgradeAddress)) as ColdPathUpgrade;
   await upgrade.deployed();
-  const upgradeAddress = upgrade.address;
   console.log("ColdPathUpgrade deployed at Address - ", upgradeAddress);
+  console.log("ColdPathUpgrade gas used: ", receipt.gasUsed.toString());
 
 
   // Now that all the contracts have been deployed, they must be connected to the main CrocSwapDex contract
@@ -280,7 +325,8 @@ async function deploy() {
     [21, coldAddress, COLD_PROXY_IDX]
   );
   tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
-  await tx.wait();
+  receipt = await tx.wait();
+  console.log("Coldpath install gas used: ", receipt.gasUsed.toString());
 
   // Install LongPath in callpath 4
   console.log("Installing LongPath");
@@ -289,7 +335,9 @@ async function deploy() {
     [21, longAddress, LONG_PROXY_IDX]
   );
   tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
-  await tx.wait();
+  receipt = await tx.wait();
+  console.log("Longpath install gas used: ", receipt.gasUsed.toString());
+
 
   // Install WarmPath in callpath 2
   console.log("Installing WarmPath");
@@ -298,7 +346,9 @@ async function deploy() {
     [21, warmAddress, LP_PROXY_IDX]
   );
   tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
-  await tx.wait();
+  receipt = await tx.wait();
+  console.log("Warmpath proxy install gas used: ", receipt.gasUsed.toString());
+
 
   // Install HotProxy in callpath 1
   console.log("Installing HotPath Proxy");
@@ -307,7 +357,9 @@ async function deploy() {
     [21, hotAddress, SWAP_PROXY_IDX]
   );
   tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
-  await tx.wait();
+  receipt = await tx.wait();
+  console.log("Hotproxy install gas used: ", receipt.gasUsed.toString());
+
 
   // Install MicroPaths in callpath 5
   console.log("Installing MicroPaths");
@@ -316,7 +368,8 @@ async function deploy() {
     [21, microAddress, MICRO_PROXY_IDX]
   );
   tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
-  await tx.wait();
+  receipt = await tx.wait();
+  console.log("MicroPaths install gas used: ", receipt.gasUsed.toString());
 
   // Install KnockoutLiqPath in callpath 7
   console.log("Installing KnockoutLiqPath");
@@ -325,7 +378,9 @@ async function deploy() {
     [21, knockout_liqAddress, KNOCKOUT_LP_PROXY_IDX]
   );
   tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
-  await tx.wait();
+  receipt = await tx.wait();
+  console.log("KnockoutLiqPath install gas used: ", receipt.gasUsed.toString());
+
 
   // Install KnockoutFlagPath in callpath 3500
   console.log("Installing KnockoutFlagPath");
@@ -334,7 +389,9 @@ async function deploy() {
     [21, knockout_flagAddress, FLAG_CROSS_PROXY_IDX]
   );
   tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
-  await tx.wait();
+  receipt = await tx.wait();
+  console.log("KnockoutFlagPath install gas used: ", receipt.gasUsed.toString());
+
 
   // Install SafeModePath in callpath 9999
   console.log("Installing SafeModePath");
@@ -343,7 +400,9 @@ async function deploy() {
     [21, safe_modeAddress, SAFE_MODE_PROXY_PATH]
   );
   tx = await dex.protocolCmd(BOOT_PROXY_IDX, cmd, true);
-  await tx.wait();
+  receipt = await tx.wait();
+  console.log("Safemode install gas used: ", receipt.gasUsed.toString());
+
 
   // Note we do not install the ColdPathUpgrade since it's use is at test runtime
 
@@ -354,7 +413,8 @@ async function deploy() {
   console.log("Setting initial pool liquidity");
   let setPoolLiqCmd = abiCoder.encode(["uint8", "uint128"], [112, 1]);
   tx = await dex.protocolCmd(3, setPoolLiqCmd, true);
-  await tx.wait();
+  receipt = await tx.wait();
+  console.log("Initial pool liquidity tx gas used: ", receipt.gasUsed.toString());
 
   // Next we set up two "pool templates", which restrict new pools to adhere to a common format.
   // Regular users are allowed to create new pools with any token pair they want, but they are limited to using only
@@ -409,26 +469,28 @@ async function deploy() {
   let outOfRangePlaceBits = outOfRangeKnockoutPlaceType << 4;
   
   // Allow pools on the stable pair template to have any knockout position with width of 64 ticks
-  let stablePairBits = stablePairWidthBits | inRangePlaceBits | outOfRangePlaceBits;
+  let stablePairBits = stablePairWidthBits | inRangePlaceBits | outOfRangePlaceBits | onGridBits;
   // Allow pools on the volatile pair template to have any knockout position with width of 1024 ticks
-  let volatilePairBits = volatilePairWidthBits | inRangePlaceBits | outOfRangePlaceBits;
+  let volatilePairBits = volatilePairWidthBits | inRangePlaceBits | outOfRangePlaceBits | onGridBits;
 
 
   console.log("Setting default pool templates (index 36000, 36001)");
   // Set the stable pairs to use index 36000, have a fee of 0.25%, tick size of 1, 10 second jit time, stable pair bits, and no oracle
   let templateCmd = abiCoder.encode(
     ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
-    [110, 36000, 2500, 1, 1, stablePairBits, 0]
+    [110, 36000, 2500, 0, 1, stablePairBits, 0]
   );
   tx = await dex.protocolCmd(3, templateCmd, false);
-  await tx.wait();
+  receipt = await tx.wait();
+  console.log("Pool template 36000 tx gas used: ", receipt.gasUsed.toString());
   // Set the volatile pairs to use index 36001, have a fee of .50%, tick size of 16, 10 second jit time, volatile pair bits, and no oracle
   templateCmd = abiCoder.encode(
     ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
     [110, 36001, 5000, 4, 1, volatilePairBits, 0]
   );
   tx = await dex.protocolCmd(3, templateCmd, false);
-  await tx.wait();
+  receipt = await tx.wait();
+  console.log("Pool template 36001 tx gas used: ", receipt.gasUsed.toString());
   // On blast the template 420 (used widely) is schema 1, fee rate 1500, protocol take 0, tick size 4, jit thresh 1, knockout bits 34, oracle flags 0
   // The schema will be 1 unless the dex has been upgraded and needed new pool schema values
 }
