@@ -344,28 +344,30 @@ async function deploy() {
   */
   let onGridBits = 1 << 7;
   let stablePairWidthBits = 6; // 2^6 = 64 ticks, 1.0001^64 => ~64 basis points of price movement (or 0.6 cents)
-  let volatilePairWidthBits = 10; // 2^10 = 1024 ticks, 1.0001^1024 => ~1078 basis points of price movement (or 10%)
+  let volatilePairWidthBits = 7; // 2^10 = 1024 ticks, 1.0001^1024 => ~1078 basis points of price movement (or 10%)
   let inRangeKnockoutPlaceType = 2;
   let outOfRangeKnockoutPlaceType = 1;
   let inRangePlaceBits = inRangeKnockoutPlaceType << 4;
   let outOfRangePlaceBits = outOfRangeKnockoutPlaceType << 4;
   
   // Allow pools on the stable pair template to have any knockout position with width of 64 bits
-  let stablePairBits = stablePairWidthBits | inRangePlaceBits | outOfRangePlaceBits;
+  let stablePairBits = onGridBits | stablePairWidthBits | inRangePlaceBits | outOfRangePlaceBits;
   // Allow pools on the volatile pair template to have any knockout position with width of 1024 bits
-  let volatilePairBits = volatilePairWidthBits | inRangePlaceBits | outOfRangePlaceBits;
+  let volatilePairBits = onGridBits | volatilePairWidthBits | inRangePlaceBits | outOfRangePlaceBits;
   console.log("Setting default pool templates (index 36000, 36001)");
   // Set the stable pairs to use index 36000, have a fee of 0.25%, tick size of 1, 10 second jit time, stable pair bits, and no oracle
   let templateCmd = abiCoder.encode(
     ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
-    [110, 36000, 25, 1, 1, stablePairBits, 0]
+    // [code, template index, fee rate (thousandths of a percent), tick size, jit thresh (tens of seconds), knockout bits, oracle flags]
+    [110, 36000, 5000, 1, 6, stablePairBits, 0]
   );
   tx = await dex.protocolCmd(3, templateCmd, false);
   await tx.wait();
   // Set the volatile pairs to use index 36001, have a fee of 1%, tick size of 4, 10 second jit time, stable pair bits, and no oracle
   templateCmd = abiCoder.encode(
+    // [code, template index, fee rate (thousandths of a percent), tick size, jit thresh (tens of seconds), knockout bits, oracle flags]
     ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
-    [110, 36001, 100, 4, 1, volatilePairBits, 0]
+    [110, 36001, 10000, 2, 6, volatilePairBits, 0]
   );
   tx = await dex.protocolCmd(3, templateCmd, false);
   await tx.wait();
