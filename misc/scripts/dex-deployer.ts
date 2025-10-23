@@ -469,24 +469,24 @@ async function deploy() {
   let outOfRangePlaceBits = outOfRangeKnockoutPlaceType << 4;
   
   // Allow pools on the stable pair template to have any knockout position with width of 64 ticks
-  let stablePairBits = stablePairWidthBits | inRangePlaceBits | outOfRangePlaceBits | onGridBits;
+  let stablePairBits = onGridBits | stablePairWidthBits | inRangePlaceBits | outOfRangePlaceBits;
   // Allow pools on the volatile pair template to have any knockout position with width of 1024 ticks
-  let volatilePairBits = volatilePairWidthBits | inRangePlaceBits | outOfRangePlaceBits | onGridBits;
+  let volatilePairBits = onGridBits | volatilePairWidthBits | inRangePlaceBits | outOfRangePlaceBits;
 
 
   console.log("Setting default pool templates (index 36000, 36001)");
-  // Set the stable pairs to use index 36000, have a fee of 0.25%, tick size of 1, 10 second jit time, stable pair bits, and no oracle
+  // Set the stable pairs to use index 36000, have a fee of 0.25%, tick size of 1, 60 second jit time, stable pair bits, and no oracle
   let templateCmd = abiCoder.encode(
     ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
-    [110, 36000, 2500, 0, 1, stablePairBits, 0]
+    [110, 36000, 2500, 1, 6, stablePairBits, 0]
   );
   tx = await dex.protocolCmd(3, templateCmd, false);
   receipt = await tx.wait();
   console.log("Pool template 36000 tx gas used: ", receipt.gasUsed.toString());
-  // Set the volatile pairs to use index 36001, have a fee of .50%, tick size of 16, 10 second jit time, volatile pair bits, and no oracle
+  // Set the volatile pairs to use index 36001, have a fee of .50%, tick size of 4, 60 second jit time, volatile pair bits, and no oracle
   templateCmd = abiCoder.encode(
     ["uint8", "uint256", "uint16", "uint16", "uint8", "uint8", "uint8"],
-    [110, 36001, 5000, 4, 1, volatilePairBits, 0]
+    [110, 36001, 5000, 2, 6, volatilePairBits, 0]
   );
   tx = await dex.protocolCmd(3, templateCmd, false);
   receipt = await tx.wait();
