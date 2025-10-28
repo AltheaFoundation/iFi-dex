@@ -23,12 +23,12 @@ const MIN_LIMIT = BigNumber.from("0")
 const INIT_BAL = 1000000000
 export const POOL_IDX = 85365
 
-export async function makeTokenPool(): Promise<TestPool> {
+export async function makeTokenPool(dex?: CrocSwapDex): Promise<TestPool> {
     let factory = await ethers.getContractFactory("MockERC20") as ContractFactory
     let tokenX = new ERC20Token((await factory.deploy() as MockERC20))
     let tokenY = new ERC20Token((await factory.deploy() as MockERC20))
 
-    return makePoolFrom(tokenX, tokenY)
+    return makePoolFrom(tokenX, tokenY, dex)
 }
 
 export async function makeTokenSeq(): Promise<TestPool[]> {
