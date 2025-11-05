@@ -1004,6 +1004,53 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         }
     }
 
+    /// @notice View function: check if a user needs to re-register for a reward program
+    /// @dev Returns true if any of the following conditions are met:
+    ///      1. User is not registered at all
+    ///      2. User is registered in an old epoch (program was deactivated and reactivated)
+    ///      3. User's liquidity position has changed since registration
+    ///      Returns false if program doesn't exist or user is properly registered with unchanged liquidity
+    /// @param user The user address to check
+    /// @param poolId The pool identifier
+    /// @param rewardToken The reward token address
+    /// @param isConcentrated True for concentrated liquidity, false for ambient liquidity
+    /// @return True if the user needs to re-register, false otherwise
+    function needsReregistration(
+        address user,
+        bytes32 poolId,
+        address rewardToken,
+        bool isConcentrated
+    ) external view returns (bool) {
+        RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
+        
+        // If program doesn't exist or isn't active, no point in registering
+        if (program.rewardPerBlock == 0 || !_isProgramActive(program)) {
+            return false;
+        }
+        
+        UserRewardInfo storage userInfo = _getUserInfo(user, poolId, rewardToken, isConcentrated);
+        
+        // If not registered at all, needs to register
+        if (!userInfo.registered) {
+            return true;
+        }
+        
+        // If registered in old epoch, needs to re-register for current epoch
+        if (userInfo.epoch < program.epoch) {
+            return true;
+        }
+        
+        // Check if liquidity has changed since registration
+        (uint256 currentAdded, uint256 currentRemoved) = _getUserLiquidityAccumulators(user, poolId, isConcentrated);
+        
+        if (currentAdded != userInfo.userLiqAddedSnapshot || currentRemoved != userInfo.userLiqRemovedSnapshot) {
+            return true;
+        }
+        
+        // User is properly registered with unchanged liquidity
+        return false;
+    }
+
     /// @dev Internal: Update accumulator based on blocks passed (O(1) operation)
     /// @param program The reward program to update
     /// @param poolId The pool identifier
