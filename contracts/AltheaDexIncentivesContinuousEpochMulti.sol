@@ -808,8 +808,8 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
     /// @param isConcentrated True for concentrated liquidity, false for ambient liquidity
     /// @return The amount of pending rewards
     function getPendingRewards(
-        bytes32 poolId,
         address user,
+        bytes32 poolId,
         address rewardToken,
         bool isConcentrated
     ) external view returns (uint256) {

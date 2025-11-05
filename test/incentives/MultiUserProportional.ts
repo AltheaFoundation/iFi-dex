@@ -167,7 +167,7 @@ describe('MultiUserProportional - Per-Block Incentives', () => {
         expect(rewardsB_period2).to.be.closeTo(rewardPerBlock.mul(51).div(2), ethers.utils.parseUnits("5", 18));
 
         // User A hasn't claimed yet - should have accumulated ~100+ blocks worth
-        const pendingA = await incentives.getPendingRewards(baseQuotePoolId, userAAddress, rewardToken.address, true);
+        const pendingA = await incentives.getPendingRewards(userAAddress, baseQuotePoolId, rewardToken.address, true);
         // A has been accruing from registration through all blocks so far (~104 blocks)
         expect(pendingA).to.be.closeTo(rewardPerBlock.mul(104).div(2), ethers.utils.parseUnits("10", 18));
 
@@ -240,8 +240,8 @@ describe('MultiUserProportional - Per-Block Incentives', () => {
         // - N+54 to N+104: 50 blocks shared 50/50 = 250 tokens
         //
         // Total: 1020 tokens (102 blocks elapsed from userA registration)
-        const pendingA = await incentives.getPendingRewards(baseQuotePoolId, userAAddress, rewardToken.address, true);
-        const pendingB = await incentives.getPendingRewards(baseQuotePoolId, userBAddress, rewardToken.address, true);
+        const pendingA = await incentives.getPendingRewards(userAAddress, baseQuotePoolId, rewardToken.address, true);
+        const pendingB = await incentives.getPendingRewards(userBAddress, baseQuotePoolId, rewardToken.address, true);
 
         // A should have more rewards than B (had sole ownership initially)
         expect(pendingA).to.be.gt(pendingB);
@@ -263,8 +263,8 @@ describe('MultiUserProportional - Per-Block Incentives', () => {
         // Wait another 50 blocks (now both registered for full period)
         await hardhat.network.provider.send("hardhat_mine", [`0x${50}`]);
 
-        const pendingA_period2 = await incentives.getPendingRewards(baseQuotePoolId, userAAddress, rewardToken.address, true);
-        const pendingB_period2 = await incentives.getPendingRewards(baseQuotePoolId, userBAddress, rewardToken.address, true);
+        const pendingA_period2 = await incentives.getPendingRewards(userAAddress, baseQuotePoolId, rewardToken.address, true);
+        const pendingB_period2 = await incentives.getPendingRewards(userBAddress, baseQuotePoolId, rewardToken.address, true);
 
         // Now 50/50 split, both should have similar rewards for this period
         expect(pendingA_period2).to.be.closeTo(pendingB_period2, ethers.utils.parseUnits("100", 18));
@@ -325,7 +325,7 @@ describe('MultiUserProportional - Per-Block Incentives', () => {
 
         // After 3 periods, User A should have accumulated rewards
         // A gets 70% of the blocks that passed
-        const pendingA_after3 = await incentives.getPendingRewards(baseQuotePoolId, userAAddress, rewardToken.address, true);
+        const pendingA_after3 = await incentives.getPendingRewards(userAAddress, baseQuotePoolId, rewardToken.address, true);
         expect(pendingA_after3).to.be.closeTo(rewardPerBlock.mul(154).mul(70).div(100), ethers.utils.parseUnits("30", 18));
 
         // User A claims after 3 periods

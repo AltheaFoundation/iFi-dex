@@ -318,8 +318,8 @@ describe("AltheaDexIncentives - Epoch System", function () {
             
             // User should be able to claim
             const pendingRewards = await incentives.getPendingRewards(
-                baseQuotePoolId,
                 traderAddress,
+                baseQuotePoolId,
                 rewardToken.address,
                 true
             );
@@ -376,8 +376,8 @@ describe("AltheaDexIncentives - Epoch System", function () {
             
             // Pending rewards should be 0 (old epoch)
             const pendingRewards = await incentives.getPendingRewards(
-                baseQuotePoolId,
                 traderAddress,
+                baseQuotePoolId,
                 rewardToken.address,
                 true
             );
@@ -411,8 +411,8 @@ describe("AltheaDexIncentives - Epoch System", function () {
             
             // User should be able to claim new epoch rewards
             const pendingRewards = await incentives.getPendingRewards(
-                baseQuotePoolId,
                 traderAddress,
+                baseQuotePoolId,
                 rewardToken.address,
                 true
             );

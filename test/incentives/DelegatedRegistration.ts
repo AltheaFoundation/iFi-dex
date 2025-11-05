@@ -85,7 +85,7 @@ describe("AltheaDexIncentivesContinuousEpochMulti - Delegated Registration", () 
             await hardhat.network.provider.send("hardhat_mine", ["0xA"]); // 10 blocks
 
             // User should be able to claim rewards
-            const pendingRewards = await incentives.getPendingRewards(poolId, traderAddress, rewardToken.address, true);
+            const pendingRewards = await incentives.getPendingRewards(traderAddress, poolId, rewardToken.address, true);
             expect(pendingRewards).to.be.gt(0);
 
             const initialBalance = await rewardToken.balanceOf(traderAddress);

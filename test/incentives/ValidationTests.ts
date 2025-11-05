@@ -199,8 +199,8 @@ describe('ValidationTests - Per-Block Incentives', () => {
             const traderAddress = await (await test1.trader).getAddress();
             
             const pending = await incentives.getPendingRewards(
-                baseQuotePoolId,
                 traderAddress,
+                baseQuotePoolId,
                 rewardToken.address,
                 true
             );
@@ -212,8 +212,8 @@ describe('ValidationTests - Per-Block Incentives', () => {
             const traderAddress = await (await test1.trader).getAddress();
             
             const pending = await incentives.getPendingRewards(
-                baseQuotePoolId,
                 traderAddress,
+                baseQuotePoolId,
                 rewardToken.address,
                 false
             );
@@ -233,8 +233,8 @@ describe('ValidationTests - Per-Block Incentives', () => {
 
             // Don't register
             const pending = await incentives.getPendingRewards(
-                baseQuotePoolId,
                 traderAddress,
+                baseQuotePoolId,
                 rewardToken.address,
                 true
             );
@@ -254,8 +254,8 @@ describe('ValidationTests - Per-Block Incentives', () => {
 
             // Don't register
             const pending = await incentives.getPendingRewards(
-                baseQuotePoolId,
                 traderAddress,
+                baseQuotePoolId,
                 rewardToken.address,
                 false
             );

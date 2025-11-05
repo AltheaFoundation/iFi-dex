@@ -88,7 +88,7 @@ describe('TokenDecimalVariations - Per-Block Incentives', () => {
         await hardhat.network.provider.send("hardhat_mine", [`0x${(10).toString(16)}`]);
 
         // Check pending rewards - allow tolerance for transaction timing
-        const pendingRewards = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken6.address, true);
+        const pendingRewards = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken6.address, true);
         expect(pendingRewards).to.be.closeTo(rewardPerBlock.mul(10), ethers.utils.parseUnits("20", 6));
 
         const initialBalance = await rewardToken6.balanceOf(traderAddress);
@@ -128,7 +128,7 @@ describe('TokenDecimalVariations - Per-Block Incentives', () => {
         await hardhat.network.provider.send("hardhat_mine", [`0x${(10).toString(16)}`]);
 
         // Check pending rewards - allow tolerance for transaction timing
-        const pendingRewards = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken8.address, true);
+        const pendingRewards = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken8.address, true);
         expect(pendingRewards).to.be.closeTo(rewardPerBlock.mul(10), ethers.utils.parseUnits("0.1", 8));
 
         const initialBalance = await rewardToken8.balanceOf(traderAddress);
@@ -166,7 +166,7 @@ describe('TokenDecimalVariations - Per-Block Incentives', () => {
         // Wait for 10 blocks to accumulate rewards
         await hardhat.network.provider.send("hardhat_mine", [`0x${(10).toString(16)}`]);
 
-        const pendingRewards = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken6.address, false);
+        const pendingRewards = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken6.address, false);
         expect(pendingRewards).to.be.closeTo(rewardPerBlock.mul(10), ethers.utils.parseUnits("50", 6));
 
         const initialBalance = await rewardToken6.balanceOf(traderAddress);
@@ -202,7 +202,7 @@ describe('TokenDecimalVariations - Per-Block Incentives', () => {
         // Wait for 10 blocks to accumulate rewards
         await hardhat.network.provider.send("hardhat_mine", [`0x${(10).toString(16)}`]);
 
-        const pendingRewards = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken8.address, false);
+        const pendingRewards = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken8.address, false);
         expect(pendingRewards).to.be.closeTo(rewardPerBlock.mul(10), ethers.utils.parseUnits("0.3", 8));
 
         const initialBalance = await rewardToken8.balanceOf(traderAddress);
@@ -237,7 +237,7 @@ describe('TokenDecimalVariations - Per-Block Incentives', () => {
         // Wait for 30 blocks
         await hardhat.network.provider.send("hardhat_mine", [`0x${(30).toString(16)}`]);
 
-        const pendingRewards = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken6.address, true);
+        const pendingRewards = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken6.address, true);
         
         // Should accumulate 30 blocks worth of rewards - allow tolerance for transaction timing
         expect(pendingRewards).to.be.closeTo(rewardPerBlock.mul(30), ethers.utils.parseUnits("10", 6));
@@ -272,7 +272,7 @@ describe('TokenDecimalVariations - Per-Block Incentives', () => {
         // Wait for 30 blocks
         await hardhat.network.provider.send("hardhat_mine", [`0x${(30).toString(16)}`]);
 
-        const pendingRewards = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken8.address, true);
+        const pendingRewards = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken8.address, true);
         
         // Should accumulate 30 blocks worth of rewards - allow tolerance for transaction timing
         expect(pendingRewards).to.be.closeTo(rewardPerBlock.mul(30), ethers.utils.parseUnits("0.05", 8));
@@ -307,7 +307,7 @@ describe('TokenDecimalVariations - Per-Block Incentives', () => {
 
         await hardhat.network.provider.send("hardhat_mine", [`0x${(10).toString(16)}`]);
 
-        const pendingRewards = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken6.address, true);
+        const pendingRewards = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken6.address, true);
         
         // Should preserve all decimal precision for 10 blocks - allow tolerance for transaction timing
         expect(pendingRewards).to.be.closeTo(rewardPerBlock.mul(10), ethers.utils.parseUnits("0.2", 6));
@@ -343,7 +343,7 @@ describe('TokenDecimalVariations - Per-Block Incentives', () => {
 
         await hardhat.network.provider.send("hardhat_mine", [`0x${(10).toString(16)}`]);
 
-        const pendingRewards = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken8.address, true);
+        const pendingRewards = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken8.address, true);
         
         // Should preserve all decimal precision for 10 blocks - allow tolerance for transaction timing
         expect(pendingRewards).to.be.closeTo(rewardPerBlock.mul(10), ethers.utils.parseUnits("0.02", 8));

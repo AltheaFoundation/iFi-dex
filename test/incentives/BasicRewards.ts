@@ -79,7 +79,7 @@ describe('BasicRewards - Per-Block Incentives', () => {
         await hardhat.network.provider.send("hardhat_mine", [`0x${(blocksToWait - 1).toString(16)}`]);
 
         // Check pending rewards
-        const pendingRewards = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+        const pendingRewards = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
         expect(pendingRewards).to.be.gt(0);
 
         const initialBalance = await rewardToken.balanceOf(traderAddress);
@@ -121,7 +121,7 @@ describe('BasicRewards - Per-Block Incentives', () => {
         // Note: We mine blocksToWait-1 because the claim transaction itself creates one more block
         await hardhat.network.provider.send("hardhat_mine", [`0x${(blocksToWait - 1).toString(16)}`]);
 
-        const pendingRewards = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, false);
+        const pendingRewards = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, false);
         expect(pendingRewards).to.be.gt(0);
 
         const initialBalance = await rewardToken.balanceOf(traderAddress);

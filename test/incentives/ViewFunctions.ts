@@ -126,19 +126,19 @@ describe('ViewFunctions - Per-Block Incentives', () => {
             // After 10 blocks (mine 10 since we're just checking, not claiming)
             const blocksToWait1 = 10;
             await hardhat.network.provider.send("hardhat_mine", [`0x${blocksToWait1.toString(16)}`]);
-            let pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            let pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             expect(pending).to.be.closeTo(rewardPerBlock.mul(blocksToWait1), ethers.utils.parseUnits("1", 18));
             
             // After 20 total blocks (mine 10 more)
             const blocksToWait2 = 10;
             await hardhat.network.provider.send("hardhat_mine", [`0x${blocksToWait2.toString(16)}`]);
-            pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             expect(pending).to.be.closeTo(rewardPerBlock.mul(blocksToWait1 + blocksToWait2), ethers.utils.parseUnits("2", 18));
             
             // After 30 total blocks (mine 10 more)
             const blocksToWait3 = 10;
             await hardhat.network.provider.send("hardhat_mine", [`0x${blocksToWait3.toString(16)}`]);
-            pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             expect(pending).to.be.closeTo(rewardPerBlock.mul(blocksToWait1 + blocksToWait2 + blocksToWait3), ethers.utils.parseUnits("3", 18));
         });
     });
@@ -374,7 +374,7 @@ describe('ViewFunctions - Per-Block Incentives', () => {
             expect(userInfo.userLiquidity).to.equal(0);
             
             // Check pending rewards using view function
-            let pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            let pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             expect(pending).to.equal(0);
             
             // After registration
@@ -385,20 +385,20 @@ describe('ViewFunctions - Per-Block Incentives', () => {
             // Liquidity is stored as liq * 1024 in the pool
             expect(userInfo.userLiquidity).to.equal(liq * 1024);
             
-            pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             expect(pending).to.equal(0);
             
             // After 10 blocks pass (mine 10 since we're just checking, not claiming)
             const blocksToWait = 10;
             await hardhat.network.provider.send("hardhat_mine", [`0x${blocksToWait.toString(16)}`]);
             
-            pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             expect(pending).to.equal(rewardPerBlock.mul(blocksToWait));
             
             // After claiming, pending should be 0
             await incentives.claimRewards(baseQuotePoolId, rewardToken.address, true);
             
-            pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             expect(pending).to.equal(0);
         });
 

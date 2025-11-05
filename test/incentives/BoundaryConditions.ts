@@ -66,7 +66,7 @@ describe('BoundaryConditions - Per-Block Incentives', () => {
             const blocksToWait = 10;
             await hardhat.network.provider.send("hardhat_mine", [`0x${blocksToWait.toString(16)}`]);
             
-            const pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            const pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             
             // Should have exactly 10 blocks worth
             expect(pending).to.be.closeTo(rewardPerBlock.mul(10), ethers.utils.parseUnits("1", 18));
@@ -100,7 +100,7 @@ describe('BoundaryConditions - Per-Block Incentives', () => {
             // Wait another 10 blocks
             await hardhat.network.provider.send("hardhat_mine", [`0x${(10).toString(16)}`]);
             
-            const pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            const pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             
             // Should have rewards for 10 blocks (from registration to now)
             expect(pending).to.be.closeTo(rewardPerBlock.mul(10), ethers.utils.parseUnits("2", 18));
@@ -125,7 +125,7 @@ describe('BoundaryConditions - Per-Block Incentives', () => {
             // Mine 10 blocks
             await hardhat.network.provider.send("hardhat_mine", [`0x${(10).toString(16)}`]);
             
-            const pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            const pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             
             // Should have 10 blocks worth
             expect(pending).to.be.closeTo(rewardPerBlock.mul(10), ethers.utils.parseUnits("1", 18));
@@ -210,7 +210,7 @@ describe('BoundaryConditions - Per-Block Incentives', () => {
             // Wait 500 blocks
             await hardhat.network.provider.send("hardhat_mine", [`0x${(500).toString(16)}`]);
             
-            const pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            const pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             
             // Should have 500 blocks worth
             expect(pending).to.be.closeTo(
@@ -283,7 +283,7 @@ describe('BoundaryConditions - Per-Block Incentives', () => {
             await hardhat.network.provider.send("hardhat_mine", [`0x${(10).toString(16)}`]);
             
             // Should not revert, even if rewards are very small or zero
-            const pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            const pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             
             // With 100% of liquidity, should still get full rewards
             expect(pending).to.be.gt(0);

@@ -79,7 +79,7 @@ describe('ProportionalDistribution - Per-Block Incentives', () => {
         await hardhat.network.provider.send("hardhat_mine", [`0x${(200 - 1).toString(16)}`]);
 
         // Check pending rewards - should be 200 blocks worth
-        const pendingRewards = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+        const pendingRewards = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
         const expectedRewards = rewardPerBlock.mul(200); // 2000 tokens
         expect(pendingRewards).to.be.closeTo(expectedRewards, ethers.utils.parseUnits("20", 18));
 

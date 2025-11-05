@@ -188,7 +188,7 @@ describe('EmergencyWithdrawAccounting - Accounting Protections', () => {
             await hardhat.network.provider.send("hardhat_mine", [`0x${blocksToMine.toString(16)}`]);
 
             // Check pending rewards to trigger accumulator update
-            const pending = await incentives.getPendingRewards(baseQuotePoolId, traderAddress, rewardToken.address, true);
+            const pending = await incentives.getPendingRewards(traderAddress, baseQuotePoolId, rewardToken.address, true);
             
             // Program should be expired, all remaining funds should be available
             const contractBalance = await rewardToken.balanceOf(incentives.address);
