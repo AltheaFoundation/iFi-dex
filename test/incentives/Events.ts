@@ -138,8 +138,10 @@ describe('Events - Per-Block Incentives', () => {
 
         await expect(
             incentives.register(traderAddress, baseQuotePoolId, rewardToken.address, true)
-        ).to.emit(incentives, "RegisteredForRewards")
-            .withArgs(traderAddress, baseQuotePoolId, rewardToken.address, true);
+        ).to.emit(incentives, "FirstRegistration")
+            .withArgs(traderAddress, baseQuotePoolId, rewardToken.address, true, traderAddress)
+          .to.emit(incentives, "Registration")
+            .withArgs(traderAddress, baseQuotePoolId, rewardToken.address, true, traderAddress);
     });
 
     it("RegisteredForAmbientRewards event emitted correctly", async () => {
@@ -158,8 +160,10 @@ describe('Events - Per-Block Incentives', () => {
 
         await expect(
             incentives.register(traderAddress, baseQuotePoolId, rewardToken.address, false)
-        ).to.emit(incentives, "RegisteredForRewards")
-            .withArgs(traderAddress, baseQuotePoolId, rewardToken.address, false);
+        ).to.emit(incentives, "FirstRegistration")
+            .withArgs(traderAddress, baseQuotePoolId, rewardToken.address, false, traderAddress)
+          .to.emit(incentives, "Registration")
+            .withArgs(traderAddress, baseQuotePoolId, rewardToken.address, false, traderAddress);
     });
 
     it("ClaimedConcentratedRewards event emitted correctly", async () => {

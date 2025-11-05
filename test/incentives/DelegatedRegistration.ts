@@ -139,11 +139,14 @@ describe("AltheaDexIncentivesContinuousEpochMulti - Delegated Registration", () 
             );
 
             // Bot registers on behalf of user - event should show user's address, not bot's
+            const botAddress = await bot.getAddress();
             await expect(
                 incentives.connect(bot).register(traderAddress, poolId, rewardToken.address, true)
             )
-                .to.emit(incentives, "RegisteredForRewards")
-                .withArgs(traderAddress, poolId, rewardToken.address, true);
+                .to.emit(incentives, "FirstRegistration")
+                .withArgs(traderAddress, poolId, rewardToken.address, true, botAddress)
+                .to.emit(incentives, "Registration")
+                .withArgs(traderAddress, poolId, rewardToken.address, true, botAddress);
         });
 
         it("Should prevent registering zero address", async () => {
@@ -199,11 +202,12 @@ describe("AltheaDexIncentivesContinuousEpochMulti - Delegated Registration", () 
             await test1.testMint(-5000, 8000, liq.mul(2));
 
             // Bot re-registers on behalf of user
+            const botAddress = await bot.getAddress();
             await expect(
                 incentives.connect(bot).register(traderAddress, poolId, rewardToken.address, true)
             )
-                .to.emit(incentives, "UserReregistered")
-                .withArgs(traderAddress, poolId, rewardToken.address, true);
+                .to.emit(incentives, "Registration")
+                .withArgs(traderAddress, poolId, rewardToken.address, true, botAddress);
 
             // Verify user is still registered with new liquidity
             const userInfo = await incentives.userConcRewardInfo(traderAddress, poolId, rewardToken.address);

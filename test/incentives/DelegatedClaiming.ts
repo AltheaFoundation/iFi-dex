@@ -97,7 +97,7 @@ describe("AltheaDexIncentivesContinuousEpochMulti - Delegated Claiming", functio
                 incentives
                     .connect(claimer)
                     .claimRewardsOnBehalfOf(traderAddress, poolId, rewardToken.address, true)
-            ).to.emit(incentives, "DelegatedClaimRewards");
+            ).to.emit(incentives, "ClaimedRewards");
 
             const userBalanceAfter = await rewardToken.balanceOf(traderAddress);
             const claimerBalanceAfter = await rewardToken.balanceOf(claimerAddress);
@@ -148,15 +148,15 @@ describe("AltheaDexIncentivesContinuousEpochMulti - Delegated Claiming", functio
                 incentives
                     .connect(claimer)
                     .claimRewardsOnBehalfOf(traderAddress, poolId, rewardToken.address, true)
-            ).to.emit(incentives, "DelegatedClaimRewards")
+            ).to.emit(incentives, "ClaimedRewards")
                 .withArgs(
-                    claimerAddress,
                     traderAddress,
                     poolId,
                     rewardToken.address,
                     true,
-                    (userAmount: any) => userAmount.gt(0),  // Just check it's positive
-                    (claimerFee: any) => claimerFee.gt(0)  // Just check it's positive
+                    (amount: any) => amount.gt(0),  // Total rewards (user + claimer fee)
+                    claimerAddress,  // Claimer address
+                    (claimerFee: any) => claimerFee.gt(0)  // Claimer fee
                 );
         });
 

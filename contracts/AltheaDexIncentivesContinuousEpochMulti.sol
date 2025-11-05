@@ -186,14 +186,23 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
     event ProgramDeactivated(
         bytes32 indexed poolId,
         address indexed rewardToken,
-        bool isConcentrated
+        bool indexed isConcentrated
     );
     
-    event RegisteredForRewards(
+    event FirstRegistration(
         address indexed user,
         bytes32 indexed poolId,
         address indexed rewardToken,
-        bool isConcentrated
+        bool isConcentrated,
+        address registrar
+    );
+    
+    event Registration(
+        address indexed user,
+        bytes32 indexed poolId,
+        address indexed rewardToken,
+        bool isConcentrated,
+        address registrar
     );
     
     event ClaimedRewards(
@@ -201,16 +210,8 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         bytes32 indexed poolId,
         address indexed rewardToken,
         bool isConcentrated,
-        uint256 amount
-    );
-    
-    event DelegatedClaimRewards(
-        address indexed claimer,
-        address indexed user,
-        bytes32 indexed poolId,
-        address rewardToken,
-        bool isConcentrated,
-        uint256 userAmount,
+        uint256 amount,
+        address claimer,
         uint256 claimerFee
     );
     
@@ -219,7 +220,9 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         address indexed rewardToken,
         bool indexed isConcentrated,
         uint256 blocksPassed,
-        uint256 newAccumulator
+        uint256 newAccumulator,
+        uint256 totalRegisteredLiquidity,
+        uint256 rewardPerBlock
     );
     
     event EmergencyWithdrawal(
@@ -231,14 +234,8 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
     event ProgramFundingExhausted(
         bytes32 indexed poolId,
         address indexed rewardToken,
-        bool indexed isConcentrated
-    );
-    
-    event UserReregistered(
-        address indexed user,
-        bytes32 indexed poolId,
-        address indexed rewardToken,
-        bool isConcentrated
+        bool indexed isConcentrated,
+        uint256 totalRegisteredLiquidity
     );
     
     event DelegatedClaimFeeUpdated(
@@ -602,11 +599,13 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
     /// @param poolId The pool identifier
     /// @param rewardToken The reward token address
     /// @param isConcentrated True for concentrated, false for ambient
+    /// @param registrar The address performing the registration (msg.sender)
     function _registerInternal(
         address user,
         bytes32 poolId,
         address rewardToken,
-        bool isConcentrated
+        bool isConcentrated,
+        address registrar
     ) internal {
         RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
         require(program.rewardPerBlock > 0, "Program does not exist");
@@ -655,7 +654,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
             userInfo.userLiqRemovedSnapshot = userRemoved;
             userInfo.epoch = program.epoch; // Update to current epoch
             
-            emit UserReregistered(user, poolId, rewardToken, isConcentrated);
+            emit Registration(user, poolId, rewardToken, isConcentrated, registrar);
             return;
         }
         
@@ -664,11 +663,11 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
             // User was registered in old epoch
             // Note: totalRegisteredLiquidity was reset to 0 when epoch incremented,
             // so we don't subtract the old liquidity
-            
-            emit UserReregistered(user, poolId, rewardToken, isConcentrated);
+            emit Registration(user, poolId, rewardToken, isConcentrated, registrar);
         } else {
-            // First time registration
-            emit RegisteredForRewards(user, poolId, rewardToken, isConcentrated);
+            // First time registration - emit both events
+            emit FirstRegistration(user, poolId, rewardToken, isConcentrated, registrar);
+            emit Registration(user, poolId, rewardToken, isConcentrated, registrar);
         }
         
         // Register/re-register for current epoch
@@ -732,10 +731,11 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         
         // Determine if this is a delegated claim
         bool isDelegatedClaim = (user != claimer);
+        uint256 claimerFee = 0;
         
         if (isDelegatedClaim) {
             // Split rewards between user and claimer
-            uint256 claimerFee = (rewards * DELEGATED_CLAIM_FEE_BASIS_POINTS) / BASIS_POINTS;
+            claimerFee = (rewards * DELEGATED_CLAIM_FEE_BASIS_POINTS) / BASIS_POINTS;
             uint256 userAmount = rewards - claimerFee;
             
             // Transfer rewards
@@ -743,13 +743,13 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
             if (claimerFee > 0) {
                 _transferReward(rewardToken, claimer, claimerFee);
             }
-            
-            emit DelegatedClaimRewards(claimer, user, poolId, rewardToken, isConcentrated, userAmount, claimerFee);
         } else {
             // Self-claim: transfer all rewards to user
             _transferReward(rewardToken, user, rewards);
-            emit ClaimedRewards(user, poolId, rewardToken, isConcentrated, rewards);
         }
+        
+        // Emit unified claim event
+        emit ClaimedRewards(user, poolId, rewardToken, isConcentrated, rewards, claimer, claimerFee);
     }
 
     /// @notice Register for rewards (handles both initial registration and re-registration automatically)
@@ -769,7 +769,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         bool isConcentrated
     ) external nonReentrant {
         require(user != address(0), "Invalid user address");
-        _registerInternal(user, poolId, rewardToken, isConcentrated);
+        _registerInternal(user, poolId, rewardToken, isConcentrated, msg.sender);
     }
 
     /// @notice Claim rewards (calculates and transfers rewards)
@@ -1066,12 +1066,19 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
             program.rewardToken,
             isConcentrated,
             blocksSinceUpdate,
-            program.rewardPerLiquidityAccumulator
+            program.rewardPerLiquidityAccumulator,
+            program.totalRegisteredLiquidity,
+            program.rewardPerBlock
         );
         
         // If we've now reached or passed the end block, emit exhaustion event
         if (program.lastUpdateBlock >= program.endBlock) {
-            emit ProgramFundingExhausted(poolId, program.rewardToken, isConcentrated);
+            emit ProgramFundingExhausted(
+                poolId, 
+                program.rewardToken, 
+                isConcentrated,
+                program.totalRegisteredLiquidity
+            );
         }
     }
 

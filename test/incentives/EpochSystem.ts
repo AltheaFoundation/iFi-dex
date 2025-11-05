@@ -264,7 +264,7 @@ describe("AltheaDexIncentives - Epoch System", function () {
             expect(userInfo.registered).to.be.true;
         });
         
-        it("Should emit UserReregistered event when user re-registers for new epoch", async function () {
+        it("Should emit Registration event when user re-registers for new epoch", async function () {
             const traderAddress = await (await test1.trader).getAddress();
             
             // User registers in epoch 1
@@ -280,11 +280,11 @@ describe("AltheaDexIncentives - Epoch System", function () {
                 true
             );
             
-            // User re-registers - should emit UserReregistered event
+            // User re-registers - should emit Registration event (not first registration)
             await expect(
                 incentives.register(traderAddress, baseQuotePoolId, rewardToken.address, true)
-            ).to.emit(incentives, "UserReregistered")
-             .withArgs(traderAddress, baseQuotePoolId, rewardToken.address, true);
+            ).to.emit(incentives, "Registration")
+             .withArgs(traderAddress, baseQuotePoolId, rewardToken.address, true, traderAddress);
         });
     });
     
