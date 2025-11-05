@@ -816,6 +816,27 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         return _getPendingRewardsInternal(poolId, user, rewardToken, isConcentrated);
     }
 
+    /// @notice View function: get potential tip for a delegated claimer
+    /// @dev This calculates only the fee portion (DELEGATED_CLAIM_FEE_BASIS_POINTS) 
+    ///      that would go to a third-party claimer if they claimed on behalf of the user
+    /// @param user The user address whose rewards would be claimed
+    /// @param poolId The pool identifier
+    /// @param rewardToken The reward token address
+    /// @param isConcentrated True for concentrated liquidity, false for ambient liquidity
+    /// @return The amount of potential tip for the claimer
+    function getPotentialTip(
+        address user,
+        bytes32 poolId,
+        address rewardToken,
+        bool isConcentrated
+    ) external view returns (uint256) {
+        uint256 totalPendingRewards = _getPendingRewardsInternal(poolId, user, rewardToken, isConcentrated);
+        if (totalPendingRewards == 0) {
+            return 0;
+        }
+        return (totalPendingRewards * DELEGATED_CLAIM_FEE_BASIS_POINTS) / BASIS_POINTS;
+    }
+
     /// @dev Internal view: Unified pending rewards calculation
     function _getPendingRewardsInternal(
         bytes32 poolId,

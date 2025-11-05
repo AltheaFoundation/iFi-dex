@@ -398,4 +398,261 @@ describe("AltheaDexIncentivesContinuousEpochMulti - Delegated Claiming", functio
             expect(percentageDiff.toNumber()).to.be.closeTo(DEFAULT_FEE_BASIS_POINTS, 10);
         });
     });
+
+    describe("getPotentialTip View Function", function () {
+        it("Should return correct potential tip for claimer", async () => {
+            const liq = BigNumber.from(1000000);
+            await test1.testMint(-5000, 8000, liq);
+
+            const trader = await test1.trader;
+            const traderAddress = await trader.getAddress();
+
+            // Create and fund reward program
+            await incentives.createOrModifyProgram(
+                poolId,
+                rewardToken.address,
+                REWARD_PER_BLOCK,
+                INITIAL_FUNDING,
+                true
+            );
+
+            // Register for rewards
+            await incentives.register(traderAddress, poolId, rewardToken.address, true);
+
+            // Wait for blocks
+            const blocksToWait = 100;
+            await hardhat.network.provider.send("hardhat_mine", [`0x${blocksToWait.toString(16)}`]);
+
+            // Get pending rewards and potential tip
+            const pendingRewards = await incentives.getPendingRewards(
+                traderAddress,
+                poolId,
+                rewardToken.address,
+                true
+            );
+            const potentialTip = await incentives.getPotentialTip(
+                traderAddress,
+                poolId,
+                rewardToken.address,
+                true
+            );
+
+            // Verify tip is 1% of pending rewards
+            const expectedTip = pendingRewards.mul(DEFAULT_FEE_BASIS_POINTS).div(BASIS_POINTS);
+            expect(potentialTip).to.equal(expectedTip);
+
+            // Tip should be approximately 1% of total rewards
+            expect(potentialTip).to.be.gt(0);
+            expect(pendingRewards).to.be.gt(potentialTip);
+        });
+
+        it("Should return zero tip when no pending rewards", async () => {
+            const liq = BigNumber.from(1000000);
+            await test1.testMint(-5000, 8000, liq);
+
+            const trader = await test1.trader;
+            const traderAddress = await trader.getAddress();
+
+            // Create and fund reward program
+            await incentives.createOrModifyProgram(
+                poolId,
+                rewardToken.address,
+                REWARD_PER_BLOCK,
+                INITIAL_FUNDING,
+                true
+            );
+
+            // Register for rewards
+            await incentives.register(traderAddress, poolId, rewardToken.address, true);
+
+            // Don't wait for blocks - immediately check
+            const potentialTip = await incentives.getPotentialTip(
+                traderAddress,
+                poolId,
+                rewardToken.address,
+                true
+            );
+
+            expect(potentialTip).to.equal(0);
+        });
+
+        it("Should return zero tip for unregistered user", async () => {
+            const trader = await test1.trader;
+            const traderAddress = await trader.getAddress();
+
+            // Create and fund reward program
+            await incentives.createOrModifyProgram(
+                poolId,
+                rewardToken.address,
+                REWARD_PER_BLOCK,
+                INITIAL_FUNDING,
+                true
+            );
+
+            // Don't register - just check tip
+            const potentialTip = await incentives.getPotentialTip(
+                traderAddress,
+                poolId,
+                rewardToken.address,
+                true
+            );
+
+            expect(potentialTip).to.equal(0);
+        });
+
+        it("Should reflect updated fee in potential tip calculation", async () => {
+            const liq = BigNumber.from(1000000);
+            await test1.testMint(-5000, 8000, liq);
+
+            const trader = await test1.trader;
+            const traderAddress = await trader.getAddress();
+
+            // Create and fund reward program
+            await incentives.createOrModifyProgram(
+                poolId,
+                rewardToken.address,
+                REWARD_PER_BLOCK,
+                INITIAL_FUNDING,
+                true
+            );
+
+            // Register for rewards
+            await incentives.register(traderAddress, poolId, rewardToken.address, true);
+
+            // Wait for blocks
+            await hardhat.network.provider.send("hardhat_mine", ["0x64"]);
+
+            // Get tip with default 1% fee
+            const tipBefore = await incentives.getPotentialTip(
+                traderAddress,
+                poolId,
+                rewardToken.address,
+                true
+            );
+
+            // Update fee to 2%
+            const newFee = 200;
+            await incentives.updateDelegatedClaimFee(newFee);
+
+            // Get pending rewards and tip with new 2% fee
+            const pendingRewardsAfter = await incentives.getPendingRewards(
+                traderAddress,
+                poolId,
+                rewardToken.address,
+                true
+            );
+            const tipAfter = await incentives.getPotentialTip(
+                traderAddress,
+                poolId,
+                rewardToken.address,
+                true
+            );
+
+            // Verify new tip is 2% of pending rewards
+            const expectedTip = pendingRewardsAfter.mul(newFee).div(BASIS_POINTS);
+            expect(tipAfter).to.equal(expectedTip);
+
+            // New tip should be approximately double the old tip
+            expect(tipAfter).to.be.gt(tipBefore);
+            expect(tipAfter.div(2)).to.be.closeTo(tipBefore, tipBefore.div(100)); // Allow 1% tolerance
+        });
+
+        it("Should match actual claimer fee when claiming", async () => {
+            const liq = BigNumber.from(1000000);
+            await test1.testMint(-5000, 8000, liq);
+
+            const trader = await test1.trader;
+            const traderAddress = await trader.getAddress();
+
+            // Create and fund reward program
+            await incentives.createOrModifyProgram(
+                poolId,
+                rewardToken.address,
+                REWARD_PER_BLOCK,
+                INITIAL_FUNDING,
+                true
+            );
+
+            // Register for rewards
+            await incentives.register(traderAddress, poolId, rewardToken.address, true);
+
+            // Wait for blocks
+            await hardhat.network.provider.send("hardhat_mine", ["0x64"]);
+
+            // Get potential tip before claiming
+            const potentialTipBefore = await incentives.getPotentialTip(
+                traderAddress,
+                poolId,
+                rewardToken.address,
+                true
+            );
+
+            expect(potentialTipBefore).to.be.gt(0);
+
+            // Perform delegated claim
+            const signers = await ethers.getSigners();
+            const claimer = signers[2];
+            const claimerAddress = await claimer.getAddress();
+
+            const claimerBalanceBefore = await rewardToken.balanceOf(claimerAddress);
+
+            await incentives
+                .connect(claimer)
+                .claimRewardsOnBehalfOf(traderAddress, poolId, rewardToken.address, true);
+
+            const claimerBalanceAfter = await rewardToken.balanceOf(claimerAddress);
+            const actualClaimerFee = claimerBalanceAfter.sub(claimerBalanceBefore);
+
+            // Actual fee should be very close to potential tip
+            // (may differ by 1 block's worth of rewards due to the claim transaction mining)
+            const oneBlockReward = REWARD_PER_BLOCK.mul(DEFAULT_FEE_BASIS_POINTS).div(BASIS_POINTS);
+            expect(actualClaimerFee).to.be.closeTo(potentialTipBefore, oneBlockReward);
+        });
+
+        it("Should handle zero fee correctly", async () => {
+            // Set fee to 0%
+            await incentives.updateDelegatedClaimFee(0);
+
+            const liq = BigNumber.from(1000000);
+            await test1.testMint(-5000, 8000, liq);
+
+            const trader = await test1.trader;
+            const traderAddress = await trader.getAddress();
+
+            // Create and fund reward program
+            await incentives.createOrModifyProgram(
+                poolId,
+                rewardToken.address,
+                REWARD_PER_BLOCK,
+                INITIAL_FUNDING,
+                true
+            );
+
+            // Register for rewards
+            await incentives.register(traderAddress, poolId, rewardToken.address, true);
+
+            // Wait for blocks
+            await hardhat.network.provider.send("hardhat_mine", ["0x64"]);
+
+            // Get potential tip with 0% fee
+            const potentialTip = await incentives.getPotentialTip(
+                traderAddress,
+                poolId,
+                rewardToken.address,
+                true
+            );
+
+            // Should be zero
+            expect(potentialTip).to.equal(0);
+
+            // Even though there are pending rewards
+            const pendingRewards = await incentives.getPendingRewards(
+                traderAddress,
+                poolId,
+                rewardToken.address,
+                true
+            );
+            expect(pendingRewards).to.be.gt(0);
+        });
+    });
 });
