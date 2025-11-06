@@ -113,7 +113,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
     /// @notice Any third party claiming on behalf of a user will receive this portion of the rewards (in basis points)
     ///         admin can update this value to account for changing gas costs. 
     uint256 public DELEGATED_CLAIM_FEE_BASIS_POINTS = 100; // 1%
-    
+
     /// @notice Basis points denominator (10000 = 100%)
     uint256 public constant BASIS_POINTS = 10000;
 
@@ -149,13 +149,13 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
 
     // poolId => rewardToken => ConcentratedRewardProgram
     mapping(bytes32 => mapping(address => RewardProgram)) public concentratedPrograms;
-    
+
     // poolId => rewardToken => AmbientRewardProgram
     mapping(bytes32 => mapping(address => RewardProgram)) public ambientPrograms;
 
     // user => poolId => rewardToken => concentrated UserRewardInfo
     mapping(address => mapping(bytes32 => mapping(address => UserRewardInfo))) public userConcRewardInfo;
-    
+
     // user => poolId => rewardToken => ambient UserRewardInfo
     mapping(address => mapping(bytes32 => mapping(address => UserRewardInfo))) public userAmbRewardInfo;
 
@@ -174,7 +174,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         uint256 rewardPerBlock,
         uint256 endBlock
     );
-    
+
     event ProgramModified(
         bytes32 indexed poolId,
         address indexed rewardToken,
@@ -182,13 +182,13 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         uint256 newRewardPerBlock,
         uint256 newEndBlock
     );
-    
+
     event ProgramDeactivated(
         bytes32 indexed poolId,
         address indexed rewardToken,
         bool indexed isConcentrated
     );
-    
+
     event FirstRegistration(
         address indexed user,
         bytes32 indexed poolId,
@@ -196,7 +196,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         bool isConcentrated,
         address registrar
     );
-    
+
     event Registration(
         address indexed user,
         bytes32 indexed poolId,
@@ -204,7 +204,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         bool isConcentrated,
         address registrar
     );
-    
+
     event ClaimedRewards(
         address indexed user,
         bytes32 indexed poolId,
@@ -214,7 +214,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         address claimer,
         uint256 claimerFee
     );
-    
+
     event AccumulatorUpdated(
         bytes32 indexed poolId,
         address indexed rewardToken,
@@ -224,25 +224,25 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         uint256 totalRegisteredLiquidity,
         uint256 rewardPerBlock
     );
-    
+
     event EmergencyWithdrawal(
         address indexed token,
         address indexed destination,
         uint256 amount
     );
-    
+
     event ProgramFundingExhausted(
         bytes32 indexed poolId,
         address indexed rewardToken,
         bool indexed isConcentrated,
         uint256 totalRegisteredLiquidity
     );
-    
+
     event DelegatedClaimFeeUpdated(
         uint256 oldFee,
         uint256 newFee
     );
-    
+
     event ProgramEpochIncremented(
         bytes32 indexed poolId,
         address indexed rewardToken,
@@ -253,504 +253,13 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
     constructor(address _altheaDexAddress, address _owner) {
         require(_altheaDexAddress != address(0), "Invalid DEX address");
         altheaDexAddress = StorageLayout(_altheaDexAddress);
-        
+
         if (_owner != address(0)) {
             transferOwnership(_owner);
         }
     }
 
-    // ============ Internal Helper Functions ============
-
-    /// @dev Get the correct program storage based on liquidity type
-    function _getProgram(
-        bytes32 poolId,
-        address rewardToken,
-        bool isConcentrated
-    ) internal view returns (RewardProgram storage) {
-        return isConcentrated 
-            ? concentratedPrograms[poolId][rewardToken]
-            : ambientPrograms[poolId][rewardToken];
-    }
-
-    /// @dev Get the correct user info storage based on liquidity type
-    function _getUserInfo(
-        address user,
-        bytes32 poolId,
-        address rewardToken,
-        bool isConcentrated
-    ) internal view returns (UserRewardInfo storage) {
-        return isConcentrated
-            ? userConcRewardInfo[user][poolId][rewardToken]
-            : userAmbRewardInfo[user][poolId][rewardToken];
-    }
-
-    /// @dev Get user's liquidity accumulators from DEX
-    function _getUserLiquidityAccumulators(
-        address user,
-        bytes32 poolId,
-        bool isConcentrated
-    ) internal view returns (uint256 added, uint256 removed) {
-        if (isConcentrated) {
-            added = altheaDexAddress.incentiveUserPoolConcLiqAddedAccumulators(user, poolId);
-            removed = altheaDexAddress.incentiveUserPoolConcLiqRemovedAccumulators(user, poolId);
-        } else {
-            added = altheaDexAddress.incentiveUserPoolAmbLiqAddedAccumulators(user, poolId);
-            removed = altheaDexAddress.incentiveUserPoolAmbLiqRemovedAccumulators(user, poolId);
-        }
-    }
-
-    /// @dev Get pool's total liquidity accumulators from DEX
-    function _getPoolLiquidityAccumulators(
-        bytes32 poolId,
-        bool isConcentrated
-    ) internal view returns (uint256 added, uint256 removed) {
-        if (isConcentrated) {
-            added = altheaDexAddress.incentivePoolConcLiqAddedAccumulators(poolId);
-            removed = altheaDexAddress.incentivePoolConcLiqRemovedAccumulators(poolId);
-        } else {
-            added = altheaDexAddress.incentivePoolAmbLiqAddedAccumulators(poolId);
-            removed = altheaDexAddress.incentivePoolAmbLiqRemovedAccumulators(poolId);
-        }
-    }
-
-    /// @dev Check if a program's funding is exhausted (past end block)
-    /// @param program The reward program to check
-    /// @return True if current block is at or past the program's end block
-    function _isFundingExhausted(RewardProgram storage program) internal view returns (bool) {
-        return block.number >= program.endBlock;
-    }
-
-    /// @dev Check if a program is active (exists and not exhausted)
-    /// @param program The reward program to check
-    /// @return True if program exists and has not reached its end block
-    function _isProgramActive(RewardProgram storage program) internal view returns (bool) {
-        return program.rewardPerBlock > 0 && !_isFundingExhausted(program);
-    }
-
-    // ============ Public/External Functions ============
-
-    /// @dev Internal: Unified logic for creating or modifying a reward program
-    /// @dev Accounting model:
-    ///      - totalCommittedRewards tracks future obligations (sum of remainingBlocks * rewardPerBlock for all programs)
-    ///      - Contract balance includes: unclaimed rewards + committed future rewards + uncommitted tokens
-    ///      - Available for new programs = balance - totalCommittedRewards
-    ///      - When blocks pass (via _updateAccumulator), totalCommittedRewards decreases
-    ///      - When programs are deactivated, remaining commitments are released
-    ///      - This allows reusing leftover funds from completed programs and directly sent tokens
-    function _createOrModifyProgramInternal(
-        bytes32 poolId,
-        address rewardToken,
-        uint256 rewardPerBlock,
-        uint256 fundingAmount,
-        bool isConcentrated
-    ) internal {
-        require(poolId != bytes32(0), "Zero pool ID");
-        require(rewardPerBlock > 0, "Zero reward per block");
-        
-        // Handle funding based on token type
-        if (rewardToken == address(0)) {
-            // Native token: must send value with transaction
-            require(msg.value == fundingAmount, "Native funding mismatch");
-        } else {
-            // ERC20: pull tokens from sender if funding amount specified
-            require(msg.value == 0, "Cannot send native tokens for ERC20 program");
-            if (fundingAmount > 0) {
-                IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), fundingAmount);
-            }
-        }
-        
-        RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
-        bool isNew = program.rewardPerBlock == 0;
-        bool wasDeactivated = false;
-        
-        // Check if program was previously deactivated (has rewardPerBlock but funding exhausted)
-        if (!isNew && _isFundingExhausted(program)) {
-            wasDeactivated = true;
-        }
-        
-        // Update accumulator first if program exists and not deactivated
-        // This ensures lastUpdateBlock is current before we calculate new endBlock
-        // For deactivated programs, we'll handle the stale commitment below
-        if (!isNew && !wasDeactivated) {
-            _updateAccumulator(program, poolId, isConcentrated);
-        }
-        
-        // Calculate old commitment AFTER updating accumulator
-        uint256 oldCommitment = 0;
-        if (!isNew && !_isFundingExhausted(program)) {
-            // Active program: calculate remaining commitment after accumulator update
-            uint256 remainingBlocks = program.endBlock - program.lastUpdateBlock;
-            oldCommitment = remainingBlocks * program.rewardPerBlock;
-        } else if (wasDeactivated) {
-            // Exhausted program being reactivated
-            // We need to release any stale commitment that was never freed due to lack of accumulator updates
-            // This handles the case where program expired without anyone triggering _updateAccumulator
-            
-            // First, update the accumulator to the endBlock to free up committed funds for blocks that passed
-            // This simulates what would have happened if someone had called an update function
-            if (program.lastUpdateBlock < program.endBlock) {
-                uint256 unupdatedBlocks = program.endBlock - program.lastUpdateBlock;
-                uint256 staleCommitment = unupdatedBlocks * program.rewardPerBlock;
-                
-                // Release the stale commitment from totalCommittedRewards
-                // This represents blocks that passed but were never accounted for
-                if (totalCommittedRewards[rewardToken] >= staleCommitment) {
-                    totalCommittedRewards[rewardToken] -= staleCommitment;
-                } else {
-                    // Should not happen, but safeguard against underflow
-                    totalCommittedRewards[rewardToken] = 0;
-                }
-                
-                // Update lastUpdateBlock to endBlock to mark that we've accounted for all blocks
-                program.lastUpdateBlock = program.endBlock;
-            }
-            
-            // After cleanup, oldCommitment is 0 since the program is exhausted and we've released stale funds
-            oldCommitment = 0;
-        }
-        
-        // If reactivating a deactivated program, increment epoch and release old commitments
-        if (wasDeactivated) {
-            program.epoch += 1;
-            
-            // Reset accumulator and registered liquidity for new epoch
-            program.rewardPerLiquidityAccumulator = 0;
-            program.totalRegisteredLiquidity = 0;
-            
-            emit ProgramEpochIncremented(poolId, rewardToken, isConcentrated, program.epoch);
-        }
-        
-        // Calculate available balance for this reward token
-        uint256 availableBalance;
-        if (rewardToken == address(0)) {
-            availableBalance = address(this).balance;
-        } else {
-            availableBalance = IERC20(rewardToken).balanceOf(address(this));
-        }
-        
-        // Subtract already committed rewards (future commitments from all programs)
-        uint256 committed = totalCommittedRewards[rewardToken];
-        // Add back this program's old commitment since we're replacing it
-        if (oldCommitment > 0) {
-            committed -= oldCommitment;
-        }
-        require(availableBalance >= committed, "Insufficient balance for existing commitments");
-        availableBalance -= committed;
-        
-        // Calculate how many blocks this program can run with available balance
-        uint256 fundedBlocks = availableBalance / rewardPerBlock;
-        require(fundedBlocks > 0, "Insufficient funding for at least one block");
-        
-        // Calculate end block based on funding
-        // Always use current block as start to prevent over-commitment from stale lastUpdateBlock
-        uint256 startBlock = block.number;
-        uint256 endBlock = startBlock + fundedBlocks;
-        
-        // Calculate new commitment
-        uint256 newCommitment = fundedBlocks * rewardPerBlock;
-        
-        // Update global commitment tracking
-        if (oldCommitment > 0) {
-            totalCommittedRewards[rewardToken] -= oldCommitment;
-        }
-        totalCommittedRewards[rewardToken] += newCommitment;
-        
-        // Set or update program parameters
-        if (isNew) {
-            program.rewardToken = rewardToken;
-            program.lastUpdateBlock = block.number;
-            program.epoch = 1; // Start at epoch 1
-            emit ProgramCreated(poolId, rewardToken, isConcentrated, rewardPerBlock, endBlock);
-            emit ProgramEpochIncremented(poolId, rewardToken, isConcentrated, program.epoch);
-        } else {
-            // For modifications, lastUpdateBlock was already updated by _updateAccumulator above
-            // Or set to current block for reactivations
-            if (wasDeactivated) {
-                program.lastUpdateBlock = block.number;
-            }
-            emit ProgramModified(poolId, rewardToken, isConcentrated, rewardPerBlock, endBlock);
-        }
-        
-        program.rewardPerBlock = rewardPerBlock;
-        program.endBlock = endBlock;
-    }
-
-    /// @notice Owner-only: Creates or modifies a reward program
-    /// @dev IMPORTANT: Funding must be provided in the same transaction:
-    ///      - For ERC20 tokens: Approve this contract first, tokens will be pulled during this call
-    ///      - For native tokens: Send value with this transaction (payable)
-    ///      This ensures programs are always fully funded and prevents underfunded programs.
-    ///      Any excess funding at program end can be recovered via emergencyWithdraw.
-    /// @param poolId The pool identifier
-    /// @param rewardToken The reward token address (address(0) for native)
-    /// @param rewardPerBlock Amount of rewards distributed per block
-    /// @param fundingAmount Amount of tokens to fund the program with (0 for modifications that don't add funding)
-    /// @param isConcentrated True for concentrated liquidity, false for ambient liquidity
-    function createOrModifyProgram(
-        bytes32 poolId,
-        address rewardToken,
-        uint256 rewardPerBlock,
-        uint256 fundingAmount,
-        bool isConcentrated
-    ) external payable onlyOwner {
-        _createOrModifyProgramInternal(poolId, rewardToken, rewardPerBlock, fundingAmount, isConcentrated);
-    }
-
-    /// @notice Owner-only: Deactivates a program (no new registrations, existing users can still claim)
-    /// @param poolId The pool identifier
-    /// @param rewardToken The reward token address
-    /// @param isConcentrated True for concentrated, false for ambient
-    function deactivateProgram(
-        bytes32 poolId,
-        address rewardToken,
-        bool isConcentrated
-    ) external onlyOwner {
-        RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
-        
-        require(program.rewardPerBlock > 0, "Program does not exist");
-        
-        // Update accumulator one last time if program is still active
-        if (_isProgramActive(program)) {
-            _updateAccumulator(program, poolId, isConcentrated);
-        }
-        
-        // Release any remaining committed rewards
-        // This handles both:
-        // 1. Active programs with future blocks remaining
-        // 2. Expired programs with stale commitment (lastUpdateBlock < endBlock)
-        if (program.lastUpdateBlock < program.endBlock) {
-            // Calculate commitment for blocks that haven't been accounted for
-            uint256 remainingBlocks = program.endBlock - program.lastUpdateBlock;
-            uint256 staleCommitment = remainingBlocks * program.rewardPerBlock;
-            
-            if (totalCommittedRewards[rewardToken] >= staleCommitment) {
-                totalCommittedRewards[rewardToken] -= staleCommitment;
-            } else {
-                // Should not happen, but safeguard against underflow
-                totalCommittedRewards[rewardToken] = 0;
-            }
-            
-            // Update lastUpdateBlock to endBlock to mark that we've released the commitment
-            program.lastUpdateBlock = program.endBlock;
-        }
-        
-        // Set endBlock to current block to deactivate the program
-        program.endBlock = block.number;
-        emit ProgramDeactivated(poolId, rewardToken, isConcentrated);
-    }
-    
-    /// @notice Owner-only: Update the delegated claim fee
-    /// @param newFeeBasisPoints The new fee in basis points (100 = 1%)
-    function updateDelegatedClaimFee(uint256 newFeeBasisPoints) external onlyOwner {
-        require(newFeeBasisPoints <= BASIS_POINTS, "Fee exceeds 100%");
-        uint256 oldFee = DELEGATED_CLAIM_FEE_BASIS_POINTS;
-        DELEGATED_CLAIM_FEE_BASIS_POINTS = newFeeBasisPoints;
-        emit DelegatedClaimFeeUpdated(oldFee, newFeeBasisPoints);
-    }
-
-    /// @notice Emergency function to withdraw stuck tokens or native tokens
-    /// @dev Only allows withdrawing tokens that are not committed to active or paused programs.
-    ///      Admin must first deactivate programs or wait for them to expire. Then create a new program
-    ///      (blocking claiming from the old program) to free up committed funds before withdrawing
-    ///      This ensures admin cannot drain funds that may still be claimable by users.
-    /// @param token Token address (address(0) for native)
-    /// @param destination Recipient address
-    /// @param amount Amount to withdraw
-    function emergencyWithdraw(
-        address token,
-        address destination,
-        uint256 amount
-    ) external onlyOwner {
-        require(destination != address(0), "Zero destination");
-        require(amount > 0, "Zero amount");
-        
-        // Get current balance
-        uint256 currentBalance;
-        if (token == address(0)) {
-            currentBalance = address(this).balance;
-        } else {
-            currentBalance = IERC20(token).balanceOf(address(this));
-        }
-        
-        // Calculate available balance (total balance minus committed future rewards)
-        uint256 committed = totalCommittedRewards[token];
-        require(currentBalance >= committed, "Insufficient balance for committed rewards");
-        uint256 availableBalance = currentBalance - committed;
-        
-        // Can only withdraw from available balance
-        require(amount <= availableBalance, "Exceeds available balance");
-        
-        if (token == address(0)) {
-            payable(destination).sendValue(amount);
-        } else {
-            IERC20(token).safeTransfer(destination, amount);
-        }
-        
-        emit EmergencyWithdrawal(token, destination, amount);
-    }
-
-    /// @dev Internal: Smart registration logic that handles both initial registration and re-registration
-    /// @notice Automatically determines whether to register, re-register, or no-op based on current state
-    /// @dev - If not registered: registers the user
-    ///      - If already registered with unchanged liquidity: no-op (success)
-    ///      - If already registered with changed liquidity: re-registers (forfeits pending rewards)
-    ///      - If registered in old epoch: re-registers for new epoch (forfeits old epoch rewards)
-    /// @param user The user to register (can be msg.sender or another address for delegated registration)
-    /// @param poolId The pool identifier
-    /// @param rewardToken The reward token address
-    /// @param isConcentrated True for concentrated, false for ambient
-    /// @param registrar The address performing the registration (msg.sender)
-    function _registerInternal(
-        address user,
-        bytes32 poolId,
-        address rewardToken,
-        bool isConcentrated,
-        address registrar
-    ) internal {
-        RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
-        require(program.rewardPerBlock > 0, "Program does not exist");
-        require(_isProgramActive(program), "Program not active");
-        
-        // Update accumulator to latest before checking user's state
-        // This ensures the accumulator is up-to-date for reward calculations
-        _updateAccumulator(program, poolId, isConcentrated);
-        
-        // Check if program has funding after update
-        require(!_isFundingExhausted(program), "Program funding exhausted");
-        
-        UserRewardInfo storage userInfo = _getUserInfo(user, poolId, rewardToken, isConcentrated);
-        
-        // Get current user liquidity from DEX
-        (uint256 userAdded, uint256 userRemoved) = _getUserLiquidityAccumulators(user, poolId, isConcentrated);
-        
-        // User must have net liquidity
-        require(userAdded > userRemoved, "No net liquidity");
-        
-        // Check if user is registered in old epoch
-        bool oldEpoch = userInfo.registered && userInfo.epoch < program.epoch;
-        
-        // If already registered, check if liquidity has changed or epoch changed
-        if (userInfo.registered && !oldEpoch) {
-            // Check if liquidity has changed
-            bool liquidityChanged = (userAdded != userInfo.userLiqAddedSnapshot || userRemoved != userInfo.userLiqRemovedSnapshot);
-            
-            // If liquidity hasn't changed, this is a no-op - just return success
-            if (!liquidityChanged) {
-                return; // No-op: already registered with same liquidity in current epoch
-            }
-            
-            // Liquidity has changed - perform re-registration
-            // Get OLD user liquidity to remove from total
-            uint256 oldUserNetLiq = userInfo.userLiqAddedSnapshot - userInfo.userLiqRemovedSnapshot;
-            uint256 newUserNetLiq = userAdded - userRemoved;
-            
-            // Update total registered liquidity (remove old, add new)
-            program.totalRegisteredLiquidity = program.totalRegisteredLiquidity - oldUserNetLiq + newUserNetLiq;
-            
-            // Update snapshots to current state - this resets reward tracking
-            // Any rewards accrued since last claim are forfeited
-            userInfo.userRewardPerLiquiditySnapshot = program.rewardPerLiquidityAccumulator;
-            userInfo.userLiqAddedSnapshot = userAdded;
-            userInfo.userLiqRemovedSnapshot = userRemoved;
-            userInfo.epoch = program.epoch; // Update to current epoch
-            
-            emit Registration(user, poolId, rewardToken, isConcentrated, registrar);
-            return;
-        }
-        
-        // Handle registration in old epoch or first time registration
-        if (oldEpoch) {
-            // User was registered in old epoch
-            // Note: totalRegisteredLiquidity was reset to 0 when epoch incremented,
-            // so we don't subtract the old liquidity
-            emit Registration(user, poolId, rewardToken, isConcentrated, registrar);
-        } else {
-            // First time registration - emit both events
-            emit FirstRegistration(user, poolId, rewardToken, isConcentrated, registrar);
-            emit Registration(user, poolId, rewardToken, isConcentrated, registrar);
-        }
-        
-        // Register/re-register for current epoch
-        uint256 userNetLiq = userAdded - userRemoved;
-        
-        // Record snapshots - snapshot the accumulator for reward calculation
-        userInfo.userRewardPerLiquiditySnapshot = program.rewardPerLiquidityAccumulator;
-        userInfo.userLiqAddedSnapshot = userAdded;
-        userInfo.userLiqRemovedSnapshot = userRemoved;
-        userInfo.registered = true;
-        userInfo.epoch = program.epoch; // Set to current epoch
-        
-        // Add user's liquidity to total registered liquidity
-        program.totalRegisteredLiquidity += userNetLiq;
-    }
-
-    /// @dev Internal: Unified claim logic (calculates and transfers rewards in one operation)
-    /// @param user The user whose rewards to claim
-    /// @param claimer The address claiming the rewards (msg.sender for self-claim, or delegate for third-party claim)
-    /// @param poolId The pool identifier
-    /// @param rewardToken The reward token address
-    /// @param isConcentrated True for concentrated, false for ambient
-    function _claimRewardsInternal(
-        address user,
-        address claimer,
-        bytes32 poolId,
-        address rewardToken,
-        bool isConcentrated
-    ) internal {
-        RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
-        require(program.rewardPerBlock > 0, "Program does not exist");
-        
-        // Update accumulator to latest
-        _updateAccumulator(program, poolId, isConcentrated);
-        
-        UserRewardInfo storage userInfo = _getUserInfo(user, poolId, rewardToken, isConcentrated);
-        require(userInfo.registered, "Not registered");
-        
-        // Check if user is registered in current epoch
-        require(userInfo.epoch == program.epoch, "User registered in old epoch, must re-register");
-        
-        // Get current user liquidity from DEX
-        (uint256 currentAdded, uint256 currentRemoved) = _getUserLiquidityAccumulators(user, poolId, isConcentrated);
-        
-        // Verify liquidity hasn't changed since registration
-        require(currentAdded == userInfo.userLiqAddedSnapshot, "Liquidity changed");
-        require(currentRemoved == userInfo.userLiqRemovedSnapshot, "Liquidity changed");
-        
-        // Calculate rewards
-        uint256 userNetLiq = currentAdded - currentRemoved;
-        uint256 rewardPerLiqDelta = program.rewardPerLiquidityAccumulator - userInfo.userRewardPerLiquiditySnapshot;
-        uint256 rewards = (userNetLiq * rewardPerLiqDelta) / PRECISION;
-        
-        require(rewards > 0, "No rewards to claim");
-        
-        // Update snapshot for next claim - user remains registered with same liquidity
-        userInfo.userRewardPerLiquiditySnapshot = program.rewardPerLiquidityAccumulator;
-        
-        // NOTE: User's liquidity remains in totalRegisteredLiquidity since they're still registered
-        // User does NOT need to re-register unless they change their liquidity position
-        
-        // Determine if this is a delegated claim
-        bool isDelegatedClaim = (user != claimer);
-        uint256 claimerFee = 0;
-        
-        if (isDelegatedClaim) {
-            // Split rewards between user and claimer
-            claimerFee = (rewards * DELEGATED_CLAIM_FEE_BASIS_POINTS) / BASIS_POINTS;
-            uint256 userAmount = rewards - claimerFee;
-            
-            // Transfer rewards
-            _transferReward(rewardToken, user, userAmount);
-            if (claimerFee > 0) {
-                _transferReward(rewardToken, claimer, claimerFee);
-            }
-        } else {
-            // Self-claim: transfer all rewards to user
-            _transferReward(rewardToken, user, rewards);
-        }
-        
-        // Emit unified claim event
-        emit ClaimedRewards(user, poolId, rewardToken, isConcentrated, rewards, claimer, claimerFee);
-    }
+    // ============ Common User Functions ============
 
     /// @notice Register for rewards (handles both initial registration and re-registration automatically)
     /// @dev Smart function that:
@@ -783,7 +292,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
     ) external nonReentrant {
         _claimRewardsInternal(msg.sender, msg.sender, poolId, rewardToken, isConcentrated);
     }
-    
+
     /// @notice Claim rewards on behalf of another user (delegated claim)
     /// @dev The claimer receives DELEGATED_CLAIM_FEE_BASIS_POINTS of the rewards as compensation
     /// @param user The user whose rewards to claim
@@ -801,6 +310,8 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         _claimRewardsInternal(user, msg.sender, poolId, rewardToken, isConcentrated);
     }
 
+    // ============ Query Functions ============
+
     /// @notice View function: get pending rewards for a user
     /// @param poolId The pool identifier
     /// @param user The user address
@@ -817,7 +328,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
     }
 
     /// @notice View function: get potential tip for a delegated claimer
-    /// @dev This calculates only the fee portion (DELEGATED_CLAIM_FEE_BASIS_POINTS) 
+    /// @dev This calculates only the fee portion (DELEGATED_CLAIM_FEE_BASIS_POINTS)
     ///      that would go to a third-party claimer if they claimed on behalf of the user
     /// @param user The user address whose rewards would be claimed
     /// @param poolId The pool identifier
@@ -835,43 +346,6 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
             return 0;
         }
         return (totalPendingRewards * DELEGATED_CLAIM_FEE_BASIS_POINTS) / BASIS_POINTS;
-    }
-
-    /// @dev Internal view: Unified pending rewards calculation
-    function _getPendingRewardsInternal(
-        bytes32 poolId,
-        address user,
-        address rewardToken,
-        bool isConcentrated
-    ) internal view returns (uint256) {
-        RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
-        UserRewardInfo storage userInfo = _getUserInfo(user, poolId, rewardToken, isConcentrated);
-        
-        if (!userInfo.registered || program.rewardPerBlock == 0) {
-            return 0;
-        }
-        
-        // If user is registered in old epoch, they have no pending rewards
-        if (userInfo.epoch < program.epoch) {
-            return 0;
-        }
-        
-        // Calculate what the accumulator would be after updating
-        uint256 currentAccumulator = _calculateUpdatedAccumulator(program);
-        
-        // Get current user liquidity
-        (uint256 currentAdded, uint256 currentRemoved) = _getUserLiquidityAccumulators(user, poolId, isConcentrated);
-        
-        // If liquidity changed, can't calculate
-        if (currentAdded != userInfo.userLiqAddedSnapshot || currentRemoved != userInfo.userLiqRemovedSnapshot) {
-            return 0;
-        }
-        
-        uint256 userNetLiq = currentAdded - currentRemoved;
-        uint256 rewardPerLiqDelta = currentAccumulator - userInfo.userRewardPerLiquiditySnapshot;
-        uint256 rewards = (userNetLiq * rewardPerLiqDelta) / PRECISION;
-        
-        return rewards;
     }
 
     /// @notice View function: get program information
@@ -977,7 +451,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         } else {
             totalBalance = IERC20(rewardToken).balanceOf(address(this));
         }
-        
+
         uint256 committed = totalCommittedRewards[rewardToken];
         if (totalBalance > committed) {
             return totalBalance - committed;
@@ -1015,7 +489,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         currentBlock = block.number;
         lastUpdateBlock = program.lastUpdateBlock;
         endBlock = program.endBlock;
-        
+
         if (_isFundingExhausted(program) || program.rewardPerBlock == 0) {
             remainingBlocks = 0;
             remainingRewards = 0;
@@ -1043,33 +517,563 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         bool isConcentrated
     ) external view returns (bool) {
         RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
-        
+
         // If program doesn't exist or isn't active, no point in registering
         if (program.rewardPerBlock == 0 || !_isProgramActive(program)) {
             return false;
         }
-        
+
         UserRewardInfo storage userInfo = _getUserInfo(user, poolId, rewardToken, isConcentrated);
-        
+
         // If not registered at all, needs to register
         if (!userInfo.registered) {
             return true;
         }
-        
+
         // If registered in old epoch, needs to re-register for current epoch
         if (userInfo.epoch < program.epoch) {
             return true;
         }
-        
+
         // Check if liquidity has changed since registration
         (uint256 currentAdded, uint256 currentRemoved) = _getUserLiquidityAccumulators(user, poolId, isConcentrated);
-        
+
         if (currentAdded != userInfo.userLiqAddedSnapshot || currentRemoved != userInfo.userLiqRemovedSnapshot) {
             return true;
         }
-        
+
         // User is properly registered with unchanged liquidity
         return false;
+    }
+
+    // ============  Admin Functions =============
+
+    /// @notice Owner-only: Creates or modifies a reward program
+    /// @dev IMPORTANT: Funding must be provided in the same transaction:
+    ///      - For ERC20 tokens: Approve this contract first, tokens will be pulled during this call
+    ///      - For native tokens: Send value with this transaction (payable)
+    ///      This ensures programs are always fully funded and prevents underfunded programs.
+    ///      Any excess funding at program end can be recovered via emergencyWithdraw.
+    /// @param poolId The pool identifier
+    /// @param rewardToken The reward token address (address(0) for native)
+    /// @param rewardPerBlock Amount of rewards distributed per block
+    /// @param fundingAmount Amount of tokens to fund the program with (0 for modifications that don't add funding)
+    /// @param isConcentrated True for concentrated liquidity, false for ambient liquidity
+    function createOrModifyProgram(
+        bytes32 poolId,
+        address rewardToken,
+        uint256 rewardPerBlock,
+        uint256 fundingAmount,
+        bool isConcentrated
+    ) external payable onlyOwner {
+        _createOrModifyProgramInternal(poolId, rewardToken, rewardPerBlock, fundingAmount, isConcentrated);
+    }
+
+    /// @notice Owner-only: Deactivates a program (no new registrations, existing users can still claim)
+    /// @param poolId The pool identifier
+    /// @param rewardToken The reward token address
+    /// @param isConcentrated True for concentrated, false for ambient
+    function deactivateProgram(
+        bytes32 poolId,
+        address rewardToken,
+        bool isConcentrated
+    ) external onlyOwner {
+        RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
+
+        require(program.rewardPerBlock > 0, "Program does not exist");
+
+        // Update accumulator one last time if program is still active
+        if (_isProgramActive(program)) {
+            _updateAccumulator(program, poolId, isConcentrated);
+        }
+
+        // Release any remaining committed rewards
+        // This handles both:
+        // 1. Active programs with future blocks remaining
+        // 2. Expired programs with stale commitment (lastUpdateBlock < endBlock)
+        if (program.lastUpdateBlock < program.endBlock) {
+            // Calculate commitment for blocks that haven't been accounted for
+            uint256 remainingBlocks = program.endBlock - program.lastUpdateBlock;
+            uint256 staleCommitment = remainingBlocks * program.rewardPerBlock;
+
+            if (totalCommittedRewards[rewardToken] >= staleCommitment) {
+                totalCommittedRewards[rewardToken] -= staleCommitment;
+            } else {
+                // Should not happen, but safeguard against underflow
+                totalCommittedRewards[rewardToken] = 0;
+            }
+
+            // Update lastUpdateBlock to endBlock to mark that we've released the commitment
+            program.lastUpdateBlock = program.endBlock;
+        }
+
+        // Set endBlock to current block to deactivate the program
+        program.endBlock = block.number;
+        emit ProgramDeactivated(poolId, rewardToken, isConcentrated);
+    }
+
+    /// @notice Owner-only: Update the delegated claim fee
+    /// @param newFeeBasisPoints The new fee in basis points (100 = 1%)
+    function updateDelegatedClaimFee(uint256 newFeeBasisPoints) external onlyOwner {
+        require(newFeeBasisPoints <= BASIS_POINTS, "Fee exceeds 100%");
+        uint256 oldFee = DELEGATED_CLAIM_FEE_BASIS_POINTS;
+        DELEGATED_CLAIM_FEE_BASIS_POINTS = newFeeBasisPoints;
+        emit DelegatedClaimFeeUpdated(oldFee, newFeeBasisPoints);
+    }
+
+    /// @notice Emergency function to withdraw stuck tokens or native tokens
+    /// @dev Only allows withdrawing tokens that are not committed to active or paused programs.
+    ///      Admin must first deactivate programs or wait for them to expire. Then create a new program
+    ///      (blocking claiming from the old program) to free up committed funds before withdrawing
+    ///      This ensures admin cannot drain funds that may still be claimable by users.
+    /// @param token Token address (address(0) for native)
+    /// @param destination Recipient address
+    /// @param amount Amount to withdraw
+    function emergencyWithdraw(
+        address token,
+        address destination,
+        uint256 amount
+    ) external onlyOwner {
+        require(destination != address(0), "Zero destination");
+        require(amount > 0, "Zero amount");
+
+        // Get current balance
+        uint256 currentBalance;
+        if (token == address(0)) {
+            currentBalance = address(this).balance;
+        } else {
+            currentBalance = IERC20(token).balanceOf(address(this));
+        }
+
+        // Calculate available balance (total balance minus committed future rewards)
+        uint256 committed = totalCommittedRewards[token];
+        require(currentBalance >= committed, "Insufficient balance for committed rewards");
+        uint256 availableBalance = currentBalance - committed;
+
+        // Can only withdraw from available balance
+        require(amount <= availableBalance, "Exceeds available balance");
+
+        if (token == address(0)) {
+            payable(destination).sendValue(amount);
+        } else {
+            IERC20(token).safeTransfer(destination, amount);
+        }
+
+        emit EmergencyWithdrawal(token, destination, amount);
+    }
+
+    // ============ Internal Functions ============
+
+    /// @dev Get the correct program storage based on liquidity type
+    function _getProgram(
+        bytes32 poolId,
+        address rewardToken,
+        bool isConcentrated
+    ) internal view returns (RewardProgram storage) {
+        return isConcentrated
+            ? concentratedPrograms[poolId][rewardToken]
+            : ambientPrograms[poolId][rewardToken];
+    }
+
+    /// @dev Get the correct user info storage based on liquidity type
+    function _getUserInfo(
+        address user,
+        bytes32 poolId,
+        address rewardToken,
+        bool isConcentrated
+    ) internal view returns (UserRewardInfo storage) {
+        return isConcentrated
+            ? userConcRewardInfo[user][poolId][rewardToken]
+            : userAmbRewardInfo[user][poolId][rewardToken];
+    }
+
+    /// @dev Get user's liquidity accumulators from DEX
+    function _getUserLiquidityAccumulators(
+        address user,
+        bytes32 poolId,
+        bool isConcentrated
+    ) internal view returns (uint256 added, uint256 removed) {
+        if (isConcentrated) {
+            added = altheaDexAddress.incentiveUserPoolConcLiqAddedAccumulators(user, poolId);
+            removed = altheaDexAddress.incentiveUserPoolConcLiqRemovedAccumulators(user, poolId);
+        } else {
+            added = altheaDexAddress.incentiveUserPoolAmbLiqAddedAccumulators(user, poolId);
+            removed = altheaDexAddress.incentiveUserPoolAmbLiqRemovedAccumulators(user, poolId);
+        }
+    }
+
+    /// @dev Get pool's total liquidity accumulators from DEX
+    function _getPoolLiquidityAccumulators(
+        bytes32 poolId,
+        bool isConcentrated
+    ) internal view returns (uint256 added, uint256 removed) {
+        if (isConcentrated) {
+            added = altheaDexAddress.incentivePoolConcLiqAddedAccumulators(poolId);
+            removed = altheaDexAddress.incentivePoolConcLiqRemovedAccumulators(poolId);
+        } else {
+            added = altheaDexAddress.incentivePoolAmbLiqAddedAccumulators(poolId);
+            removed = altheaDexAddress.incentivePoolAmbLiqRemovedAccumulators(poolId);
+        }
+    }
+
+    /// @dev Check if a program's funding is exhausted (past end block)
+    /// @param program The reward program to check
+    /// @return True if current block is at or past the program's end block
+    function _isFundingExhausted(RewardProgram storage program) internal view returns (bool) {
+        return block.number >= program.endBlock;
+    }
+
+    /// @dev Check if a program is active (exists and not exhausted)
+    /// @param program The reward program to check
+    /// @return True if program exists and has not reached its end block
+    function _isProgramActive(RewardProgram storage program) internal view returns (bool) {
+        return program.rewardPerBlock > 0 && !_isFundingExhausted(program);
+    }
+
+    /// @dev Internal: Unified logic for creating or modifying a reward program
+    /// @dev Accounting model:
+    ///      - totalCommittedRewards tracks future obligations (sum of remainingBlocks * rewardPerBlock for all programs)
+    ///      - Contract balance includes: unclaimed rewards + committed future rewards + uncommitted tokens
+    ///      - Available for new programs = balance - totalCommittedRewards
+    ///      - When blocks pass (via _updateAccumulator), totalCommittedRewards decreases
+    ///      - When programs are deactivated, remaining commitments are released
+    ///      - This allows reusing leftover funds from completed programs and directly sent tokens
+    function _createOrModifyProgramInternal(
+        bytes32 poolId,
+        address rewardToken,
+        uint256 rewardPerBlock,
+        uint256 fundingAmount,
+        bool isConcentrated
+    ) internal {
+        require(poolId != bytes32(0), "Zero pool ID");
+        require(rewardPerBlock > 0, "Zero reward per block");
+
+        // Handle funding based on token type
+        if (rewardToken == address(0)) {
+            // Native token: must send value with transaction
+            require(msg.value == fundingAmount, "Native funding mismatch");
+        } else {
+            // ERC20: pull tokens from sender if funding amount specified
+            require(msg.value == 0, "Cannot send native tokens for ERC20 program");
+            if (fundingAmount > 0) {
+                IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), fundingAmount);
+            }
+        }
+
+        RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
+        bool isNew = program.rewardPerBlock == 0;
+        bool wasDeactivated = false;
+
+        // Check if program was previously deactivated (has rewardPerBlock but funding exhausted)
+        if (!isNew && _isFundingExhausted(program)) {
+            wasDeactivated = true;
+        }
+
+        // Update accumulator first if program exists and not deactivated
+        // This ensures lastUpdateBlock is current before we calculate new endBlock
+        // For deactivated programs, we'll handle the stale commitment below
+        if (!isNew && !wasDeactivated) {
+            _updateAccumulator(program, poolId, isConcentrated);
+        }
+
+        // Calculate old commitment AFTER updating accumulator
+        uint256 oldCommitment = 0;
+        if (!isNew && !_isFundingExhausted(program)) {
+            // Active program: calculate remaining commitment after accumulator update
+            uint256 remainingBlocks = program.endBlock - program.lastUpdateBlock;
+            oldCommitment = remainingBlocks * program.rewardPerBlock;
+        } else if (wasDeactivated) {
+            // Exhausted program being reactivated
+            // We need to release any stale commitment that was never freed due to lack of accumulator updates
+            // This handles the case where program expired without anyone triggering _updateAccumulator
+
+            // First, update the accumulator to the endBlock to free up committed funds for blocks that passed
+            // This simulates what would have happened if someone had called an update function
+            if (program.lastUpdateBlock < program.endBlock) {
+                uint256 unupdatedBlocks = program.endBlock - program.lastUpdateBlock;
+                uint256 staleCommitment = unupdatedBlocks * program.rewardPerBlock;
+
+                // Release the stale commitment from totalCommittedRewards
+                // This represents blocks that passed but were never accounted for
+                if (totalCommittedRewards[rewardToken] >= staleCommitment) {
+                    totalCommittedRewards[rewardToken] -= staleCommitment;
+                } else {
+                    // Should not happen, but safeguard against underflow
+                    totalCommittedRewards[rewardToken] = 0;
+                }
+
+                // Update lastUpdateBlock to endBlock to mark that we've accounted for all blocks
+                program.lastUpdateBlock = program.endBlock;
+            }
+
+            // After cleanup, oldCommitment is 0 since the program is exhausted and we've released stale funds
+            oldCommitment = 0;
+        }
+
+        // If reactivating a deactivated program, increment epoch and release old commitments
+        if (wasDeactivated) {
+            program.epoch += 1;
+
+            // Reset accumulator and registered liquidity for new epoch
+            program.rewardPerLiquidityAccumulator = 0;
+            program.totalRegisteredLiquidity = 0;
+
+            emit ProgramEpochIncremented(poolId, rewardToken, isConcentrated, program.epoch);
+        }
+
+        // Calculate available balance for this reward token
+        uint256 availableBalance;
+        if (rewardToken == address(0)) {
+            availableBalance = address(this).balance;
+        } else {
+            availableBalance = IERC20(rewardToken).balanceOf(address(this));
+        }
+
+        // Subtract already committed rewards (future commitments from all programs)
+        uint256 committed = totalCommittedRewards[rewardToken];
+        // Add back this program's old commitment since we're replacing it
+        if (oldCommitment > 0) {
+            committed -= oldCommitment;
+        }
+        require(availableBalance >= committed, "Insufficient balance for existing commitments");
+        availableBalance -= committed;
+
+        // Calculate how many blocks this program can run with available balance
+        uint256 fundedBlocks = availableBalance / rewardPerBlock;
+        require(fundedBlocks > 0, "Insufficient funding for at least one block");
+
+        // Calculate end block based on funding
+        // Always use current block as start to prevent over-commitment from stale lastUpdateBlock
+        uint256 startBlock = block.number;
+        uint256 endBlock = startBlock + fundedBlocks;
+
+        // Calculate new commitment
+        uint256 newCommitment = fundedBlocks * rewardPerBlock;
+
+        // Update global commitment tracking
+        if (oldCommitment > 0) {
+            totalCommittedRewards[rewardToken] -= oldCommitment;
+        }
+        totalCommittedRewards[rewardToken] += newCommitment;
+
+        // Set or update program parameters
+        if (isNew) {
+            program.rewardToken = rewardToken;
+            program.lastUpdateBlock = block.number;
+            program.epoch = 1; // Start at epoch 1
+            emit ProgramCreated(poolId, rewardToken, isConcentrated, rewardPerBlock, endBlock);
+            emit ProgramEpochIncremented(poolId, rewardToken, isConcentrated, program.epoch);
+        } else {
+            // For modifications, lastUpdateBlock was already updated by _updateAccumulator above
+            // Or set to current block for reactivations
+            if (wasDeactivated) {
+                program.lastUpdateBlock = block.number;
+            }
+            emit ProgramModified(poolId, rewardToken, isConcentrated, rewardPerBlock, endBlock);
+        }
+
+        program.rewardPerBlock = rewardPerBlock;
+        program.endBlock = endBlock;
+    }
+
+    /// @dev Internal: Smart registration logic that handles both initial registration and re-registration
+    /// @notice Automatically determines whether to register, re-register, or no-op based on current state
+    /// @dev - If not registered: registers the user
+    ///      - If already registered with unchanged liquidity: no-op (success)
+    ///      - If already registered with changed liquidity: re-registers (forfeits pending rewards)
+    ///      - If registered in old epoch: re-registers for new epoch (forfeits old epoch rewards)
+    /// @param user The user to register (can be msg.sender or another address for delegated registration)
+    /// @param poolId The pool identifier
+    /// @param rewardToken The reward token address
+    /// @param isConcentrated True for concentrated, false for ambient
+    /// @param registrar The address performing the registration (msg.sender)
+    function _registerInternal(
+        address user,
+        bytes32 poolId,
+        address rewardToken,
+        bool isConcentrated,
+        address registrar
+    ) internal {
+        RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
+        require(program.rewardPerBlock > 0, "Program does not exist");
+        require(_isProgramActive(program), "Program not active");
+
+        // Update accumulator to latest before checking user's state
+        // This ensures the accumulator is up-to-date for reward calculations
+        _updateAccumulator(program, poolId, isConcentrated);
+
+        // Check if program has funding after update
+        require(!_isFundingExhausted(program), "Program funding exhausted");
+
+        UserRewardInfo storage userInfo = _getUserInfo(user, poolId, rewardToken, isConcentrated);
+
+        // Get current user liquidity from DEX
+        (uint256 userAdded, uint256 userRemoved) = _getUserLiquidityAccumulators(user, poolId, isConcentrated);
+
+        // User must have net liquidity
+        require(userAdded > userRemoved, "No net liquidity");
+
+        // Check if user is registered in old epoch
+        bool oldEpoch = userInfo.registered && userInfo.epoch < program.epoch;
+
+        // If already registered, check if liquidity has changed or epoch changed
+        if (userInfo.registered && !oldEpoch) {
+            // Check if liquidity has changed
+            bool liquidityChanged = (userAdded != userInfo.userLiqAddedSnapshot || userRemoved != userInfo.userLiqRemovedSnapshot);
+
+            // If liquidity hasn't changed, this is a no-op - just return success
+            if (!liquidityChanged) {
+                return; // No-op: already registered with same liquidity in current epoch
+            }
+
+            // Liquidity has changed - perform re-registration
+            // Get OLD user liquidity to remove from total
+            uint256 oldUserNetLiq = userInfo.userLiqAddedSnapshot - userInfo.userLiqRemovedSnapshot;
+            uint256 newUserNetLiq = userAdded - userRemoved;
+
+            // Update total registered liquidity (remove old, add new)
+            program.totalRegisteredLiquidity = program.totalRegisteredLiquidity - oldUserNetLiq + newUserNetLiq;
+
+            // Update snapshots to current state - this resets reward tracking
+            // Any rewards accrued since last claim are forfeited
+            userInfo.userRewardPerLiquiditySnapshot = program.rewardPerLiquidityAccumulator;
+            userInfo.userLiqAddedSnapshot = userAdded;
+            userInfo.userLiqRemovedSnapshot = userRemoved;
+            userInfo.epoch = program.epoch; // Update to current epoch
+
+            emit Registration(user, poolId, rewardToken, isConcentrated, registrar);
+            return;
+        }
+
+        // Handle registration in old epoch or first time registration
+        if (oldEpoch) {
+            // User was registered in old epoch
+            // Note: totalRegisteredLiquidity was reset to 0 when epoch incremented,
+            // so we don't subtract the old liquidity
+            emit Registration(user, poolId, rewardToken, isConcentrated, registrar);
+        } else {
+            // First time registration - emit both events
+            emit FirstRegistration(user, poolId, rewardToken, isConcentrated, registrar);
+            emit Registration(user, poolId, rewardToken, isConcentrated, registrar);
+        }
+
+        // Register/re-register for current epoch
+        uint256 userNetLiq = userAdded - userRemoved;
+
+        // Record snapshots - snapshot the accumulator for reward calculation
+        userInfo.userRewardPerLiquiditySnapshot = program.rewardPerLiquidityAccumulator;
+        userInfo.userLiqAddedSnapshot = userAdded;
+        userInfo.userLiqRemovedSnapshot = userRemoved;
+        userInfo.registered = true;
+        userInfo.epoch = program.epoch; // Set to current epoch
+
+        // Add user's liquidity to total registered liquidity
+        program.totalRegisteredLiquidity += userNetLiq;
+    }
+
+    /// @dev Internal: Unified claim logic (calculates and transfers rewards in one operation)
+    /// @param user The user whose rewards to claim
+    /// @param claimer The address claiming the rewards (msg.sender for self-claim, or delegate for third-party claim)
+    /// @param poolId The pool identifier
+    /// @param rewardToken The reward token address
+    /// @param isConcentrated True for concentrated, false for ambient
+    function _claimRewardsInternal(
+        address user,
+        address claimer,
+        bytes32 poolId,
+        address rewardToken,
+        bool isConcentrated
+    ) internal {
+        RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
+        require(program.rewardPerBlock > 0, "Program does not exist");
+
+        // Update accumulator to latest
+        _updateAccumulator(program, poolId, isConcentrated);
+
+        UserRewardInfo storage userInfo = _getUserInfo(user, poolId, rewardToken, isConcentrated);
+        require(userInfo.registered, "Not registered");
+
+        // Check if user is registered in current epoch
+        require(userInfo.epoch == program.epoch, "User registered in old epoch, must re-register");
+
+        // Get current user liquidity from DEX
+        (uint256 currentAdded, uint256 currentRemoved) = _getUserLiquidityAccumulators(user, poolId, isConcentrated);
+
+        // Verify liquidity hasn't changed since registration
+        require(currentAdded == userInfo.userLiqAddedSnapshot, "Liquidity changed");
+        require(currentRemoved == userInfo.userLiqRemovedSnapshot, "Liquidity changed");
+
+        // Calculate rewards
+        uint256 userNetLiq = currentAdded - currentRemoved;
+        uint256 rewardPerLiqDelta = program.rewardPerLiquidityAccumulator - userInfo.userRewardPerLiquiditySnapshot;
+        uint256 rewards = (userNetLiq * rewardPerLiqDelta) / PRECISION;
+
+        require(rewards > 0, "No rewards to claim");
+
+        // Update snapshot for next claim - user remains registered with same liquidity
+        userInfo.userRewardPerLiquiditySnapshot = program.rewardPerLiquidityAccumulator;
+
+        // NOTE: User's liquidity remains in totalRegisteredLiquidity since they're still registered
+        // User does NOT need to re-register unless they change their liquidity position
+
+        // Determine if this is a delegated claim
+        bool isDelegatedClaim = (user != claimer);
+        uint256 claimerFee = 0;
+
+        if (isDelegatedClaim) {
+            // Split rewards between user and claimer
+            claimerFee = (rewards * DELEGATED_CLAIM_FEE_BASIS_POINTS) / BASIS_POINTS;
+            uint256 userAmount = rewards - claimerFee;
+
+            // Transfer rewards
+            _transferReward(rewardToken, user, userAmount);
+            if (claimerFee > 0) {
+                _transferReward(rewardToken, claimer, claimerFee);
+            }
+        } else {
+            // Self-claim: transfer all rewards to user
+            _transferReward(rewardToken, user, rewards);
+        }
+
+        // Emit unified claim event
+        emit ClaimedRewards(user, poolId, rewardToken, isConcentrated, rewards, claimer, claimerFee);
+    }
+
+    /// @dev Internal view: Unified pending rewards calculation
+    function _getPendingRewardsInternal(
+        bytes32 poolId,
+        address user,
+        address rewardToken,
+        bool isConcentrated
+    ) internal view returns (uint256) {
+        RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
+        UserRewardInfo storage userInfo = _getUserInfo(user, poolId, rewardToken, isConcentrated);
+
+        if (!userInfo.registered || program.rewardPerBlock == 0) {
+            return 0;
+        }
+
+        // If user is registered in old epoch, they have no pending rewards
+        if (userInfo.epoch < program.epoch) {
+            return 0;
+        }
+
+        // Calculate what the accumulator would be after updating
+        uint256 currentAccumulator = _calculateUpdatedAccumulator(program);
+
+        // Get current user liquidity
+        (uint256 currentAdded, uint256 currentRemoved) = _getUserLiquidityAccumulators(user, poolId, isConcentrated);
+
+        // If liquidity changed, can't calculate
+        if (currentAdded != userInfo.userLiqAddedSnapshot || currentRemoved != userInfo.userLiqRemovedSnapshot) {
+            return 0;
+        }
+
+        uint256 userNetLiq = currentAdded - currentRemoved;
+        uint256 rewardPerLiqDelta = currentAccumulator - userInfo.userRewardPerLiquiditySnapshot;
+        uint256 rewards = (userNetLiq * rewardPerLiqDelta) / PRECISION;
+
+        return rewards;
     }
 
     /// @dev Internal: Update accumulator based on blocks passed (O(1) operation)
@@ -1091,20 +1095,20 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         bool isConcentrated
     ) internal {
         if (program.rewardPerBlock == 0) return;
-        
+
         // Determine the effective current block (capped at endBlock if past it)
         uint256 effectiveBlock = block.number < program.endBlock ? block.number : program.endBlock;
-        
+
         // If we've already updated to or past the end block, no more updates needed
         if (program.lastUpdateBlock >= program.endBlock) return;
-        
+
         // Calculate blocks since update with the effective block
         uint256 blocksSinceUpdate = effectiveBlock - program.lastUpdateBlock;
         if (blocksSinceUpdate == 0) return;
-        
+
         // Use REGISTERED liquidity instead of total pool liquidity
         uint256 netRegisteredLiq = program.totalRegisteredLiquidity;
-        
+
         // Update accumulator for passed blocks
         // NOTE: When netRegisteredLiq is 0, rewards for those blocks are not distributed.
         // This is acceptable as there are no registered liquidity providers to reward.
@@ -1115,7 +1119,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
             uint256 rewardPerLiqPerBlock = (program.rewardPerBlock * PRECISION) / netRegisteredLiq;
             program.rewardPerLiquidityAccumulator += rewardPerLiqPerBlock * blocksSinceUpdate;
         }
-        
+
         // Decrease committed rewards for blocks that have now passed
         // This frees up funds for new programs as rewards are distributed over time
         uint256 consumedCommitment = blocksSinceUpdate * program.rewardPerBlock;
@@ -1125,10 +1129,10 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
             // Should not happen in normal operation, but safeguard against underflow
             totalCommittedRewards[program.rewardToken] = 0;
         }
-        
+
         // Update last update block
         program.lastUpdateBlock = effectiveBlock;
-        
+
         emit AccumulatorUpdated(
             poolId,
             program.rewardToken,
@@ -1138,7 +1142,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
             program.totalRegisteredLiquidity,
             program.rewardPerBlock
         );
-        
+
         // If we've now reached or passed the end block, emit exhaustion event
         if (program.lastUpdateBlock >= program.endBlock) {
             emit ProgramFundingExhausted(
@@ -1157,28 +1161,28 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         RewardProgram storage program
     ) internal view returns (uint256) {
         if (program.rewardPerBlock == 0) return program.rewardPerLiquidityAccumulator;
-        
+
         // If already updated past end block, return current accumulator
         if (program.lastUpdateBlock >= program.endBlock) return program.rewardPerLiquidityAccumulator;
-        
+
         // Determine the effective current block (capped at endBlock if past it)
         uint256 effectiveBlock = block.number < program.endBlock ? block.number : program.endBlock;
         uint256 blocksSinceUpdate = effectiveBlock - program.lastUpdateBlock;
-        
+
         if (blocksSinceUpdate == 0) {
             return program.rewardPerLiquidityAccumulator;
         }
-        
+
         // Use REGISTERED liquidity instead of total pool liquidity
         uint256 currentRegisteredLiq = program.totalRegisteredLiquidity;
-        
+
         uint256 newAccumulator = program.rewardPerLiquidityAccumulator;
-        
+
         if (currentRegisteredLiq > 0 && program.rewardPerBlock > 0) {
             uint256 rewardPerLiqPerBlock = (program.rewardPerBlock * PRECISION) / currentRegisteredLiq;
             newAccumulator += rewardPerLiqPerBlock * blocksSinceUpdate;
         }
-        
+
         return newAccumulator;
     }
 
