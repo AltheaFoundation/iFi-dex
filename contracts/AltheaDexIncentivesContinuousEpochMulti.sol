@@ -762,61 +762,93 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
 
         RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
         bool isNew = program.rewardPerBlock == 0;
-        bool wasDeactivated = false;
 
-        // Check if program was previously deactivated (has rewardPerBlock but funding exhausted)
-        if (!isNew && _isFundingExhausted(program)) {
-            wasDeactivated = true;
+        if (isNew) {
+            _createProgramInternal(poolId, rewardToken, rewardPerBlock, isConcentrated, program);
+        } else {
+            _modifyProgramInternal(poolId, rewardToken, rewardPerBlock, isConcentrated, program);
         }
+    }
 
-        // Update accumulator first if program exists and not deactivated
-        // This ensures lastUpdateBlock is current before we calculate new endBlock
-        // For deactivated programs, we'll handle the stale commitment below
-        if (!isNew && !wasDeactivated) {
-            _updateAccumulator(program, poolId, isConcentrated);
+    /// @dev WARNING: Only call this after confirming the inputs, the received value, and verifying the program is new.
+    ///      ONLY meant to be called within _createOrModifyProgramInternal
+    function _createProgramInternal(
+        bytes32 poolId,
+        address rewardToken,
+        uint256 rewardPerBlock,
+        bool isConcentrated,
+        RewardProgram storage program
+    ) internal {
+        uint256 availableBalance;
+        if (rewardToken == address(0)) {
+            availableBalance = address(this).balance;
+        } else {
+            availableBalance = IERC20(rewardToken).balanceOf(address(this));
         }
+        uint256 committed = totalCommittedRewards[rewardToken];
+        require(availableBalance >= committed, "Insufficient balance for existing commitments");
+        availableBalance -= committed;
 
-        // Calculate old commitment AFTER updating accumulator
+        // Calculate how many blocks this program can run with available balance
+        uint256 fundedBlocks = availableBalance / rewardPerBlock;
+        require(fundedBlocks > 0, "Insufficient funding for at least one block");
+
+        // Calculate end block based on funding
+        // Always use current block as start to prevent over-commitment from stale lastUpdateBlock
+        uint256 startBlock = block.number;
+        uint256 endBlock = startBlock + fundedBlocks;
+
+        // Calculate new commitment
+        uint256 newCommitment = fundedBlocks * rewardPerBlock;
+
+        // Commit the rewards for the program
+        totalCommittedRewards[rewardToken] += newCommitment;
+
+        // Set the program values
+        program.rewardToken = rewardToken;
+        program.lastUpdateBlock = block.number;
+        program.epoch = 1; // Start at epoch 1
+        program.rewardPerBlock = rewardPerBlock;
+        program.endBlock = endBlock;
+        emit ProgramCreated(poolId, rewardToken, isConcentrated, rewardPerBlock, endBlock);
+        emit ProgramEpochIncremented(poolId, rewardToken, isConcentrated, program.epoch);
+    }
+
+    /// @dev WARNING: Only call this after confirming the inputs, the received value, and verifying the program is NOT new.
+    ///      ONLY meant to be called within _createOrModifyProgramInternal
+    function _modifyProgramInternal(
+        bytes32 poolId,
+        address rewardToken,
+        uint256 rewardPerBlock,
+        bool isConcentrated,
+        RewardProgram storage program
+    ) internal {
+        // Determine if program was previously deactivated (has rewardPerBlock but funding exhausted)
+        bool wasDeactivated = _isFundingExhausted(program);
         uint256 oldCommitment = 0;
-        if (!isNew && !_isFundingExhausted(program)) {
+
+        if (!wasDeactivated) {
+            // Update accumulator first if program exists and not deactivated
+            // This ensures lastUpdateBlock is current before we calculate new endBlock
+
+            _updateAccumulator(program, poolId, isConcentrated);
+            // Calculate old commitment AFTER updating accumulator
             // Active program: calculate remaining commitment after accumulator update
             uint256 remainingBlocks = program.endBlock - program.lastUpdateBlock;
             oldCommitment = remainingBlocks * program.rewardPerBlock;
-        } else if (wasDeactivated) {
-            // Exhausted program being reactivated
-            // We need to release any stale commitment that was never freed due to lack of accumulator updates
-            // This handles the case where program expired without anyone triggering _updateAccumulator
+        } else {
+            // For deactivated programs, handle the stale commitment
+            _releaseStaleCommitment(program, rewardToken);
 
-            // First, update the accumulator to the endBlock to free up committed funds for blocks that passed
-            // This simulates what would have happened if someone had called an update function
-            if (program.lastUpdateBlock < program.endBlock) {
-                uint256 unupdatedBlocks = program.endBlock - program.lastUpdateBlock;
-                uint256 staleCommitment = unupdatedBlocks * program.rewardPerBlock;
-
-                // Release the stale commitment from totalCommittedRewards
-                // This represents blocks that passed but were never accounted for
-                if (totalCommittedRewards[rewardToken] >= staleCommitment) {
-                    totalCommittedRewards[rewardToken] -= staleCommitment;
-                } else {
-                    // Should not happen, but safeguard against underflow
-                    totalCommittedRewards[rewardToken] = 0;
-                }
-
-                // Update lastUpdateBlock to endBlock to mark that we've accounted for all blocks
-                program.lastUpdateBlock = program.endBlock;
-            }
-
-            // After cleanup, oldCommitment is 0 since the program is exhausted and we've released stale funds
-            oldCommitment = 0;
-        }
-
-        // If reactivating a deactivated program, increment epoch and release old commitments
-        if (wasDeactivated) {
+            // If reactivating a deactivated program, increment epoch and release old commitments
             program.epoch += 1;
 
             // Reset accumulator and registered liquidity for new epoch
             program.rewardPerLiquidityAccumulator = 0;
             program.totalRegisteredLiquidity = 0;
+
+            // Program reactivated, set lastUpdateBlock to current block
+            program.lastUpdateBlock = block.number;
 
             emit ProgramEpochIncremented(poolId, rewardToken, isConcentrated, program.epoch);
         }
@@ -829,12 +861,10 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
             availableBalance = IERC20(rewardToken).balanceOf(address(this));
         }
 
+        // We're removing it from the commitment, but then also adding it to totalCommittedRewards
         // Subtract already committed rewards (future commitments from all programs)
-        uint256 committed = totalCommittedRewards[rewardToken];
+        uint256 committed = totalCommittedRewards[rewardToken] - oldCommitment;
         // Add back this program's old commitment since we're replacing it
-        if (oldCommitment > 0) {
-            committed -= oldCommitment;
-        }
         require(availableBalance >= committed, "Insufficient balance for existing commitments");
         availableBalance -= committed;
 
@@ -851,29 +881,34 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         uint256 newCommitment = fundedBlocks * rewardPerBlock;
 
         // Update global commitment tracking
-        if (oldCommitment > 0) {
-            totalCommittedRewards[rewardToken] -= oldCommitment;
-        }
-        totalCommittedRewards[rewardToken] += newCommitment;
+        totalCommittedRewards[rewardToken] = totalCommittedRewards[rewardToken] - oldCommitment + newCommitment;
 
-        // Set or update program parameters
-        if (isNew) {
-            program.rewardToken = rewardToken;
-            program.lastUpdateBlock = block.number;
-            program.epoch = 1; // Start at epoch 1
-            emit ProgramCreated(poolId, rewardToken, isConcentrated, rewardPerBlock, endBlock);
-            emit ProgramEpochIncremented(poolId, rewardToken, isConcentrated, program.epoch);
-        } else {
-            // For modifications, lastUpdateBlock was already updated by _updateAccumulator above
-            // Or set to current block for reactivations
-            if (wasDeactivated) {
-                program.lastUpdateBlock = block.number;
-            }
-            emit ProgramModified(poolId, rewardToken, isConcentrated, rewardPerBlock, endBlock);
-        }
+        emit ProgramModified(poolId, rewardToken, isConcentrated, rewardPerBlock, endBlock);
 
         program.rewardPerBlock = rewardPerBlock;
         program.endBlock = endBlock;
+    }
+
+    /// @dev Internal: Release unused commitment and update the program's lastUpdateBlock
+    function _releaseStaleCommitment(
+        RewardProgram storage program,
+        address rewardToken
+    ) internal {
+        if (program.lastUpdateBlock < program.endBlock) {
+            // Calculate commitment for blocks that haven't been accounted for
+            uint256 remainingBlocks = program.endBlock - program.lastUpdateBlock;
+            uint256 staleCommitment = remainingBlocks * program.rewardPerBlock;
+
+            if (totalCommittedRewards[rewardToken] >= staleCommitment) {
+                totalCommittedRewards[rewardToken] -= staleCommitment;
+            } else {
+                // Should not happen, but safeguard against underflow
+                totalCommittedRewards[rewardToken] = 0;
+            }
+
+            // Update lastUpdateBlock to endBlock to mark that we've released the commitment
+            program.lastUpdateBlock = program.endBlock;
+        }
     }
 
     /// @dev Internal: Smart registration logic that handles both initial registration and re-registration
@@ -896,14 +931,13 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
     ) internal {
         RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
         require(program.rewardPerBlock > 0, "Program does not exist");
+
         require(_isProgramActive(program), "Program not active");
+        // At this point we know the program was not deactivated and still has funding because of the active check
 
         // Update accumulator to latest before checking user's state
         // This ensures the accumulator is up-to-date for reward calculations
         _updateAccumulator(program, poolId, isConcentrated);
-
-        // Check if program has funding after update
-        require(!_isFundingExhausted(program), "Program funding exhausted");
 
         UserRewardInfo storage userInfo = _getUserInfo(user, poolId, rewardToken, isConcentrated);
 
@@ -992,8 +1026,6 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
 
         UserRewardInfo storage userInfo = _getUserInfo(user, poolId, rewardToken, isConcentrated);
         require(userInfo.registered, "Not registered");
-
-        // Check if user is registered in current epoch
         require(userInfo.epoch == program.epoch, "User registered in old epoch, must re-register");
 
         // Get current user liquidity from DEX
@@ -1007,7 +1039,6 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         uint256 userNetLiq = currentAdded - currentRemoved;
         uint256 rewardPerLiqDelta = program.rewardPerLiquidityAccumulator - userInfo.userRewardPerLiquiditySnapshot;
         uint256 rewards = (userNetLiq * rewardPerLiqDelta) / PRECISION;
-
         require(rewards > 0, "No rewards to claim");
 
         // Update snapshot for next claim - user remains registered with same liquidity
