@@ -7,7 +7,7 @@ import { solidity } from "ethereum-waffle";
 import chai from "chai";
 import { MockERC20 } from '../typechain/MockERC20';
 import { BigNumber, BigNumberish, ContractFactory, ContractTransaction, Signer } from 'ethers';
-import { HotProxy, AltheaDexContinuousMultiTokenIncentives } from '../typechain';
+import { HotProxy, AltheaDexIncentivesContinuousEpochMulti } from '../typechain';
 import {mine} from 'viem/_types/actions/test/mine';
 
 chai.use(solidity);
@@ -20,7 +20,7 @@ describe('FeeTracking', () => {
     let quoteToken: ERC20Token
     let rewardToken: ERC20Token
     const feeRate = 50000
-    let incentives : AltheaDexContinuousMultiTokenIncentives
+    let incentives : AltheaDexIncentivesContinuousEpochMulti
     let baseQuotePoolId: string
 
     beforeEach("deploy",  async () => {
@@ -42,8 +42,8 @@ describe('FeeTracking', () => {
         await test2.quote.approve(await test1.trader, (await test1.dex).address, ethers.utils.parseEther("1000000"))
 
 
-        let incentivesFactory = await ethers.getContractFactory("AltheaDexContinuousMultiTokenIncentives") as ContractFactory;
-        incentives = await incentivesFactory.deploy((await test1.dex).address, ZERO_ADDR, [], [], [], []) as AltheaDexContinuousMultiTokenIncentives;
+        let incentivesFactory = await ethers.getContractFactory("AltheaDexIncentivesContinuousEpochMulti") as ContractFactory;
+        incentives = await incentivesFactory.deploy((await test1.dex).address, ZERO_ADDR) as AltheaDexIncentivesContinuousEpochMulti;
  
         baseQuotePoolId = ethers.utils.keccak256(
             ethers.utils.defaultAbiCoder.encode(
@@ -56,9 +56,10 @@ describe('FeeTracking', () => {
     it("pool and user fee accumulators are updated on swap and harvest", async () => {
         let liqAmbient = ethers.utils.parseEther("10000000");
         let liqConcentrated = ethers.utils.parseEther("20000");
+        const traderAddress = await (await test1.trader).getAddress();
 
-        test1.base.contract.deposit(await (await test1.trader).getAddress(), liqAmbient.add(liqConcentrated).mul(ethers.utils.parseEther("1024")))
-        test1.quote.contract.deposit(await (await test1.trader).getAddress(), liqAmbient.add(liqConcentrated).mul(ethers.utils.parseEther("1024")))
+        test1.base.contract.deposit(traderAddress, liqAmbient.add(liqConcentrated).mul(ethers.utils.parseEther("1024")))
+        test1.quote.contract.deposit(traderAddress, liqAmbient.add(liqConcentrated).mul(ethers.utils.parseEther("1024")))
         test1.base.approve(await test1.trader, (await test1.dex).address, liqAmbient.add(liqConcentrated).mul(ethers.utils.parseEther("1024")))
         test1.quote.approve(await test1.trader, (await test1.dex).address, liqAmbient.add(liqConcentrated).mul(ethers.utils.parseEther("1024")))
 
@@ -66,17 +67,20 @@ describe('FeeTracking', () => {
         await test1.testMint(-5000, 5000, liqConcentrated);
         liqConcentrated = liqConcentrated.mul(1024); // Update value for future use
 
-        const rateNum = ethers.utils.parseEther("1"); // 1 token
-        const rateDen = ethers.utils.parseEther("10240"); // Every 10 blocks, every 1024 * 10^18 liquidity units
+        const rewardPerBlock = ethers.utils.parseEther("1"); // 1 token per block
+        const fundingAmount = ethers.utils.parseEther("10000"); // Fund with 10000 tokens
+        await rewardToken.contract.deposit(traderAddress, fundingAmount);
+        await rewardToken.approve(await test1.trader, await incentives.address, fundingAmount);
 
-        await incentives.createOrModifyAmbientRewardsProgram(
+        await incentives.createOrModifyProgram(
             baseQuotePoolId, 
             rewardToken.address, 
-            rateNum,  
-            rateDen, 
+            rewardPerBlock,  
+            fundingAmount,
+            true  // isConcentrated = true
         );
 
-        await incentives.registerForAmbientRewards(baseQuotePoolId, rewardToken.address);
+        await incentives.register(traderAddress, baseQuotePoolId, rewardToken.address, true);
 
         // Execute a swap on the pool
         await test1.testSwapB(false, true, ethers.utils.parseEther("1"), BigNumber.from(Math.round(2000000000001 * 2^64)));
@@ -87,8 +91,6 @@ describe('FeeTracking', () => {
 
         // Execute a harvest
         await test1.testHarvest(-5000, 5000);
-
-        const traderAddress = await (await test1.trader).getAddress();
 
         // Check that the user's incentive fee tracker for the pool is updated correctly
         const userFeeAccumulator = await (await test1.dex).incentiveUserPoolFeeAccumulators(traderAddress, baseQuotePoolId);
@@ -113,9 +115,10 @@ describe('FeeTracking', () => {
     it("fee odometer accumulators are updated on swap", async () => {
         let liqAmbient = ethers.utils.parseEther("10000000");
         let liqConcentrated = ethers.utils.parseEther("20000");
+        const traderAddress = await (await test1.trader).getAddress();
 
-        test1.base.contract.deposit(await (await test1.trader).getAddress(), liqAmbient.add(liqConcentrated).mul(ethers.utils.parseEther("1024")))
-        test1.quote.contract.deposit(await (await test1.trader).getAddress(), liqAmbient.add(liqConcentrated).mul(ethers.utils.parseEther("1024")))
+        test1.base.contract.deposit(traderAddress, liqAmbient.add(liqConcentrated).mul(ethers.utils.parseEther("1024")))
+        test1.quote.contract.deposit(traderAddress, liqAmbient.add(liqConcentrated).mul(ethers.utils.parseEther("1024")))
         test1.base.approve(await test1.trader, (await test1.dex).address, liqAmbient.add(liqConcentrated).mul(ethers.utils.parseEther("1024")))
         test1.quote.approve(await test1.trader, (await test1.dex).address, liqAmbient.add(liqConcentrated).mul(ethers.utils.parseEther("1024")))
 
@@ -135,8 +138,6 @@ describe('FeeTracking', () => {
 
         // Execute a harvest
         await test1.testHarvest(-5000, 5000);
-
-        const traderAddress = await (await test1.trader).getAddress();
 
         let lastAccum = poolFeeAccumulatorPostSwap;
         // Execute another swap on the pool
