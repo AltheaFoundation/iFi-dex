@@ -34,7 +34,7 @@ describe('CrocPolicy', () => {
       ops = (await factory.deploy(policy.address)) as MockTimelock;
       emergency = (await factory.deploy(policy.address)) as MockTimelock;
 
-      policy.transferGovernance(ops.address, treasury.address, emergency.address);
+      await policy.transferGovernance(ops.address, treasury.address, emergency.address);
     })
 
     it("constructor addresses", async() => {

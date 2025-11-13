@@ -1,4 +1,5 @@
-import { BigNumber, BytesLike, ethers, BigNumberish } from 'ethers';
+import { BigNumber } from 'ethers';
+import type { BigNumberish, BytesLike } from 'ethers';
 import { OrderDirective, PassiveDirective, SwapDirective, PoolDirective,   ConcentratedDirective, SettlementDirective, HopDirective, encodeOrderDirective } from './EncodeOrder';
 import { MAX_PRICE, MIN_PRICE } from './FixedPoint';
 
