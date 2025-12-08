@@ -147,7 +147,7 @@ describe('MultiProgramAccounting - Per-Block Incentives', () => {
             
             // Modify pool1 to increase reward per block
             const newRewardPerBlock = ethers.utils.parseUnits("20", 18);
-            await incentives.createOrModifyProgram(pool1Id, rewardToken.address, newRewardPerBlock, ethers.utils.parseUnits("1000", 18), true);
+            await incentives.createOrModifyProgram(pool1Id, rewardToken.address, newRewardPerBlock, ethers.utils.parseUnits("2000", 18), true);
             
             // Total committed should now be: pool1 (50 blocks * 20 = 1000) + pool2 (100 blocks * 10 = 1000) = 2000
             // But we funded with 3000 total, so the total committed is 3000 (pool1 gets 50 blocks, pool2 still has 100)

@@ -8,7 +8,6 @@ import chai from "chai";
 import { MockERC20 } from '../typechain/MockERC20';
 import { BigNumber, BigNumberish, ContractFactory, ContractTransaction, Signer } from 'ethers';
 import { HotProxy, AltheaDexIncentivesContinuousEpochMulti } from '../typechain';
-import {mine} from 'viem/_types/actions/test/mine';
 
 chai.use(solidity);
 
