@@ -347,7 +347,7 @@ describe('ValidationTests - Per-Block Incentives', () => {
 
             // Modify immediately (increase reward rate to 20 per block, 50 blocks funded)
             await incentives.createOrModifyProgram(baseQuotePoolId, rewardToken.address, ethers.utils.parseUnits("20", 18),
-                ethers.utils.parseUnits("1000", 18), true
+                ethers.utils.parseUnits("2000", 18), true
             );
 
             committed = await incentives.totalCommittedRewards(rewardToken.address);
@@ -355,7 +355,7 @@ describe('ValidationTests - Per-Block Incentives', () => {
 
             // Modify again (decrease reward rate to 10 per block, 100 blocks funded)
             await incentives.createOrModifyProgram(baseQuotePoolId, rewardToken.address, ethers.utils.parseUnits("10", 18),
-                ethers.utils.parseUnits("1000", 18), true
+                ethers.utils.parseUnits("3000", 18), true
             );
 
             committed = await incentives.totalCommittedRewards(rewardToken.address);

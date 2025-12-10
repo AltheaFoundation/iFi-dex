@@ -107,6 +107,9 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
     using Address for address payable;
 
+    /// @notice Current version of the contract
+    uint32 public constant Version = 1;
+
     /// @notice Precision multiplier for fixed-point arithmetic (1e18)
     uint256 public constant PRECISION = 1e18;
 
@@ -548,12 +551,40 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
 
     // ============  Admin Functions =============
 
+    struct ProgramParams {
+        bytes32 poolId;
+        address rewardToken;
+        uint256 rewardPerBlock;
+        uint256 fundingAmount;
+        bool isConcentrated;
+    }
+ 
+    /// @notice Owner-only: Creates or modifies multiple reward programs in a single transaction
+    /// @dev IMPORTANT: Funding must be provided in the same transaction or already exist:
+    ///      - For ERC20 tokens: Approve this contract first, needed tokens will be pulled during this call
+    ///      - For native tokens: Send value with this transaction (payable) or make sure the contract already has enough balance
+    /// @param programs A collection of program creation/modification arguments
+    function createOrModifyMultiplePrograms(ProgramParams[] calldata programs) external payable onlyOwner {
+        require(programs.length > 0, "No programs provided");
+        address rewardToken = programs[0].rewardToken;
+
+        for (uint256 i = 0; i < programs.length; i++) {
+            require(programs[i].rewardToken == rewardToken, "All programs must use same reward token");
+            ProgramParams calldata params = programs[i];
+            _createOrModifyProgramInternal(
+                params.poolId,
+                params.rewardToken,
+                params.rewardPerBlock,
+                params.fundingAmount,
+                params.isConcentrated
+            );
+        }
+    }
+
     /// @notice Owner-only: Creates or modifies a reward program
-    /// @dev IMPORTANT: Funding must be provided in the same transaction:
-    ///      - For ERC20 tokens: Approve this contract first, tokens will be pulled during this call
-    ///      - For native tokens: Send value with this transaction (payable)
-    ///      This ensures programs are always fully funded and prevents underfunded programs.
-    ///      Any excess funding at program end can be recovered via emergencyWithdraw.
+    /// @dev IMPORTANT: Funding must be provided in the same transaction or already exist:
+    ///      - For ERC20 tokens: Approve this contract first, needed tokens will be pulled during this call
+    ///      - For native tokens: Send value with this transaction (payable) or make sure the contract already has enough balance
     /// @param poolId The pool identifier
     /// @param rewardToken The reward token address (address(0) for native)
     /// @param rewardPerBlock Amount of rewards distributed per block
@@ -748,25 +779,14 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         require(poolId != bytes32(0), "Zero pool ID");
         require(rewardPerBlock > 0, "Zero reward per block");
 
-        // Handle funding based on token type
-        if (rewardToken == address(0)) {
-            // Native token: must send value with transaction
-            require(msg.value == fundingAmount, "Native funding mismatch");
-        } else {
-            // ERC20: pull tokens from sender if funding amount specified
-            require(msg.value == 0, "Cannot send native tokens for ERC20 program");
-            if (fundingAmount > 0) {
-                IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), fundingAmount);
-            }
-        }
 
         RewardProgram storage program = _getProgram(poolId, rewardToken, isConcentrated);
         bool isNew = program.rewardPerBlock == 0;
 
         if (isNew) {
-            _createProgramInternal(poolId, rewardToken, rewardPerBlock, isConcentrated, program);
+            _createProgramInternal(poolId, rewardToken, rewardPerBlock, fundingAmount, isConcentrated, program);
         } else {
-            _modifyProgramInternal(poolId, rewardToken, rewardPerBlock, isConcentrated, program);
+            _modifyProgramInternal(poolId, rewardToken, rewardPerBlock, fundingAmount, isConcentrated, program);
         }
     }
 
@@ -776,6 +796,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         bytes32 poolId,
         address rewardToken,
         uint256 rewardPerBlock,
+        uint256 fundingAmount,
         bool isConcentrated,
         RewardProgram storage program
     ) internal {
@@ -789,8 +810,23 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         require(availableBalance >= committed, "Insufficient balance for existing commitments");
         availableBalance -= committed;
 
+        // Handle funding based on token type
+        if (rewardToken == address(0)) {
+            // Native token: must send value with transaction
+            require(fundingAmount <= availableBalance, "Insufficient native token balance");
+        } else {
+            // ERC20: pull tokens from sender if funding amount specified
+            require(msg.value == 0, "Cannot send native tokens for ERC20 program");
+            if (fundingAmount > availableBalance) {
+                uint256 shortfall = fundingAmount - availableBalance;
+                IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), shortfall);
+                uint256 updatedBalance = IERC20(rewardToken).balanceOf(address(this));
+                require(fundingAmount <= updatedBalance, "Insufficient ERC20 token balance");
+            }
+        }
+
         // Calculate how many blocks this program can run with available balance
-        uint256 fundedBlocks = availableBalance / rewardPerBlock;
+        uint256 fundedBlocks = fundingAmount / rewardPerBlock;
         require(fundedBlocks > 0, "Insufficient funding for at least one block");
 
         // Calculate end block based on funding
@@ -820,6 +856,7 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         bytes32 poolId,
         address rewardToken,
         uint256 rewardPerBlock,
+        uint256 fundingAmount,
         bool isConcentrated,
         RewardProgram storage program
     ) internal {
@@ -868,8 +905,23 @@ contract AltheaDexIncentivesContinuousEpochMulti is ReentrancyGuard, Ownable {
         require(availableBalance >= committed, "Insufficient balance for existing commitments");
         availableBalance -= committed;
 
+        // Handle funding based on token type
+        if (rewardToken == address(0)) {
+            // Native token: must send value with transaction
+            require(fundingAmount <= availableBalance, "Insufficient native token balance");
+        } else {
+            // ERC20: pull tokens from sender if funding amount specified
+            require(msg.value == 0, "Cannot send native tokens for ERC20 program");
+            if (fundingAmount > availableBalance) {
+                uint256 shortfall = fundingAmount - availableBalance;
+                IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), shortfall);
+                uint256 updatedBalance = IERC20(rewardToken).balanceOf(address(this));
+                require(fundingAmount <= updatedBalance, "Insufficient ERC20 token balance");
+            }
+        }
+
         // Calculate how many blocks this program can run with available balance
-        uint256 fundedBlocks = availableBalance / rewardPerBlock;
+        uint256 fundedBlocks = fundingAmount / rewardPerBlock;
         require(fundedBlocks > 0, "Insufficient funding for at least one block");
 
         // Calculate end block based on funding

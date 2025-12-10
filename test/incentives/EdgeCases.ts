@@ -149,7 +149,7 @@ describe('EdgeCases - Per-Block Incentives', () => {
                 incentives.createOrModifyProgram(baseQuotePoolId, ZERO_ADDR, rewardPerBlock, fundingAmount, true,
                     { value: ethers.utils.parseEther("0.5") } // Mismatch
                 )
-            ).to.be.revertedWith("Native funding mismatch");
+            ).to.be.revertedWith("Insufficient native token balance");
         });
 
         it("reverts when creating native program with zero funding", async () => {

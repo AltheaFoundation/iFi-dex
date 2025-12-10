@@ -186,7 +186,7 @@ describe("Incentives Accounting And Funding Tests", () => {
                 baseQuotePoolId,
                 rewardToken.address,
                 rewardPerBlock,
-                0, // No new funding - using directly sent tokens
+                directAmount,
                 true
             );
 
@@ -240,7 +240,7 @@ describe("Incentives Accounting And Funding Tests", () => {
                 baseQuotePoolId,
                 ZERO_ADDR,
                 rewardPerBlock,
-                0,
+                directAmount,
                 true
             );
 

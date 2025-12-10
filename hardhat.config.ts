@@ -59,6 +59,10 @@ const config: HardhatUserConfig = {
   },
 
   networks: {
+    'althea-l1': {
+      url: "https://rpc.althea.zone:8545",
+      chainId: 258432,
+    },
     local: {
       url: "http://localhost:8545",
       chainId: 6633438,
@@ -82,6 +86,22 @@ const config: HardhatUserConfig = {
         DAI_TEST5,
       ],
     },
+  },
+
+  etherscan: {
+    apiKey: {
+      'althea-l1': 'empty'
+    },
+    customChains: [
+      {
+        network: "althea-l1",
+        chainId: 258432,
+        urls: {
+          apiURL: "https://explorer.althea.link/api",
+          browserURL: "https://explorer.althea.link"
+        }
+      }
+    ]
   },
 };
 
