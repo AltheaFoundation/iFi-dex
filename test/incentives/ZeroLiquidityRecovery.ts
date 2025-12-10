@@ -117,7 +117,7 @@ describe("Zero Liquidity Recovery Test", () => {
             baseQuotePoolId,
             rewardToken.address,
             rewardPerBlock,
-            0, // No new funding
+            contractBalance2, // No new funding
             true
         );
 
